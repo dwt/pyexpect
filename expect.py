@@ -118,14 +118,15 @@ class expect(object):
         if self._selected_matcher is None:
             raise AssertionError("Tried to call non existing matcher '{}'".format(self._selected_matcher_name))
         
-        # Trick python to shorten the stack trace. Hides the actual matcher and all the methods it
-        # calls to assert stuff. Goal: Make the stacktrace easier to read.
+        # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
+        # Hides the actual matcher and all the methods it calls to assert stuff.
         try:
             self._selected_matcher(*args, **kwargs)
         except AssertionError, assertion:
             if self._should_raise:
-                raise assertion # hide internal methods from backtrace
+                raise assertion # hide internal expect() methods from backtrace
             
+            # Support returning_expect
             return (False, assertion.message)
         
         return (True, "")
