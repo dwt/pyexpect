@@ -4,20 +4,20 @@
 # BSD Licensed <http://opensource.org/licenses/BSD-2-Clause>
 # Author: Martin Häcker mhaecker ät mac dot com
 
-__all__ = ['expect', 'expectation']
+__all__ = ['expect', 'returning_expect']
 
 import re
 
-def expectation(expected):
-    """Convenience method for a non raising expect() where raising is not a good API.
+def returning_expect(expected):
+    """Convenience method for a non raising expect().
     
-    Use like the regular expect(), but instead of raising AssertionError it returns
-    a (boolean, string) tupple that contains the expectation result and either None
+    Works like a regular expect(), but instead of raising AssertionError it returns
+    a (boolean, string) tupple that contains the expectation result and either the empty string
     or the Expectation message that would have been on the AssertionError.
     
     To get a callable reuseable expectation, use it like this:
     
-        an_expectation = lambda expected: expectation(expected).to_be('fnord')
+        an_expectation = lambda expected: returning_expect(expected).to_be('fnord')
     """
     return expect(expected, should_raise=False)
 
@@ -128,7 +128,7 @@ class expect(object):
             
             return (False, assertion.message)
         
-        return (True, None)
+        return (True, "")
     
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
         def message():
@@ -239,17 +239,10 @@ class ExpectTest(TestCase):
     
     def test_should_allow_to_formulate_abstract_expectations(self):
         # Idea: have a good api to check expectations without raising
-        # expectation = expect('fnord', raise_on_assertion=False).to.equal('fnord')
-        # syntactic sugar
-        # expectation = expect.not_throwing('fnord').to.equal('fnord')
-        # expectation = expectation('fnord').to.equal('fnord')
-        # expectation.is_met()
-        # expectation = lambda expected: expect(expected)._regular_return().to.be(True)
-        # 
-        expect(expect(False, should_raise=False).to_be(False)).equals((True, None))
-        expect(expect(False, should_raise=False).not_to.be(True)).equals((True, None))
-        expect(expectation(False).to_be(False)).equals((True, None))
-        expect(expect(False, should_raise=False).to_be(True)).to_equal((False, "Expect False to be True"))
+        expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
+        expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
+        expect(returning_expect(False).to_be(False)).equals((True, ""))
+        expect(returning_expect(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
     def test_can_add_custom_matchers(self):
         calls = []
