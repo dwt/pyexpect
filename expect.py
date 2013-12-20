@@ -341,9 +341,9 @@ class ExpectTest(TestCase):
         expect(1).not_.to.be(2)
         
         expect(lambda: expect(1).to.be(2)) \
-            .to_raise(AssertionError, r"Expect 1 to be identical to 2")
+            .to_raise(AssertionError, r"Expect 1 to be 2")
         expect(lambda: expect(1).not_to.be(1)) \
-            .to_raise(AssertionError, r"Expect 1 not to be identical to 1")
+            .to_raise(AssertionError, r"Expect 1 not to be 1")
     
     def test_is_included_in(self):
         expect(1).is_included_in(1,2,3)
