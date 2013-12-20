@@ -216,9 +216,14 @@ class expect(object):
         # We want to catch anything here to allow testing even for stuff like SystemExit
         except BaseException, exception: caught_exception = exception
         
-        self._assert(isinstance(caught_exception, exception_class), "to raise {} but it raised {!r}", exception_class.__name__, caught_exception)
-        if message_regex is not None:
-            self._assert(re.search(message_regex, str(caught_exception)) is not None, "to raise {} with message matching r'{}' but it raised {!r}", exception_class.__name__, message_regex, caught_exception)
+        if message_regex is None:
+            self._assert(isinstance(caught_exception, exception_class), 
+                "to raise {} but it raised {!r}", exception_class.__name__, caught_exception)
+        else:
+            self._assert_if_positive(isinstance(caught_exception, exception_class), 
+                "to raise {} but it raised {!r}", exception_class.__name__, caught_exception)
+            self._assert(re.search(message_regex, str(caught_exception)) is not None, 
+                "to raise {} with message matching r'{}' but it raised {!r}", exception_class.__name__, message_regex, caught_exception)
     throws = is_throwing = raise_ = raises = is_raising = to_raise
 
 from unittest import TestCase, main
@@ -376,7 +381,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect([1,2]).to.contain(3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
     
     def test_is_raising(self):
-        def raiser(): raise AssertionError('fnord')
+        def raiser(): assert False, 'fnord'
         expect(raiser).to_raise()
         expect(raiser).to_raise(AssertionError)
         expect(raiser).not_to.raise_(ArithmeticError)
@@ -385,17 +390,20 @@ class ExpectTest(TestCase):
         expect(raiser).to_raise(AssertionError, r'fno[rl]d')
         expect(raiser).not_to.raise_(AssertionError, r'foobar')
         
+        
         expect(lambda: expect(42).to_raise()) \
             .to_raise(AssertionError, r"Expect 42 to be callable")
         expect(lambda: expect(42).not_.to_raise()) \
             .to_raise(AssertionError, r"Expect 42 to be callable")
         
+        expect(lambda: expect(raiser).to_raise(NameError, r'fnord')) \
+            .to_raise(AssertionError, r"^Expect <function raiser .*> to raise NameError but it raised AssertionError\('fnord',\)$")
         expect(lambda: expect(raiser).not_to.raise_()) \
-            .to_raise(AssertionError, r"Expect <function raiser .*> not to raise Exception but it raised AssertionError\('fnord',\)")
+            .to_raise(AssertionError, r"^Expect <function raiser .*> not to raise Exception but it raised AssertionError\('fnord',\)$")
         expect(lambda: expect(raiser).not_to.raise_(AssertionError)) \
-            .to_raise(AssertionError, r"Expect <function raiser .*> not to raise AssertionError")
+            .to_raise(AssertionError, r"^Expect <function raiser .*> not to raise AssertionError but it raised AssertionError\('fnord',\)$")
         expect(lambda: expect(raiser).to_raise(AssertionError, r'fnold')) \
-            .to_raise(AssertionError, r"Expect <function raiser .*> to raise AssertionError with message matching r'fnold'")
+            .to_raise(AssertionError, r"^Expect <function raiser .*> to raise AssertionError with message matching r'fnold' but it raised AssertionError\('fnord',\)$")
     
 
 if __name__ == '__main__':
