@@ -344,10 +344,16 @@ class expect(object):
     
     __le__ = smaller_or_equal = smaller_or_equal_then = is_smaller_or_equal = is_smaller_or_equal_then = is_less_or_equal_then = is_less_or_equal
     
+    # REFACT: consider adding is_within_exclusive_range
     def is_within_range(self, lower, higher):
         self._assert(lower <= self._expected <= higher, "to be between {} and {}", lower, higher)
     
     is_between = is_within = is_within_range
+    
+    def is_close(self, actual, delta):
+        self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {} with max delta {}", actual, delta)
+    
+    almost_equal = is_almost_equal = close_to = is_close_to = is_close
 
 from unittest import TestCase, main
 class ExpectTest(TestCase):
@@ -633,5 +639,13 @@ class ExpectTest(TestCase):
         expect(lambda: expect(10).is_within_range(1,3)).to_raise(AssertionError, "Expect 10 to be between 1 and 3")
     
 
+    def test_is_close_to(self):
+        expect(3.4).is_close_to(3, 0.5)
+        expect(3.4).is_close_to(3.1, 0.5)
+        expect(3.4).is_close_to(10, 10)
+        expect(10.2).not_to_be.close_to(3, 4)
+        
+        expect(lambda: expect(10).is_.close_to(2, 3)).to_raise(AssertionError, "Expect 10 to be close to 2 with max delta 3")
+    
 if __name__ == '__main__':
     main()
