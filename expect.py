@@ -227,7 +227,10 @@ class expect(object):
     def is_equal(self, something):
         self._assert(something == self._expected, "to be equal to {}", something)
     
-    equals = equal = to_equal = is_equal
+    __eq__ = equals = equal = to_equal = is_equal
+    
+    def __ne__(self, something):
+        self.not_ == something
     
     def to_be(self, something):
         self._assert(something is self._expected, "to be {}", something)
@@ -237,12 +240,12 @@ class expect(object):
     def is_trueish(self):
         self._assert(bool(self._expected) is True, "to be trueish")
     
-    truish = trueish = is_trueish
+    truthy = truish = trueish = is_trueish
     
     def is_falseish(self):
         self._assert(bool(self._expected) is False, "to be falseish")
     
-    falsish = falseish = is_falseish
+    falsy = falsish = falseish = is_falseish
     
     def does_include(self, something):
         self._assert(something in self._expected, "to include {}", something)
@@ -301,6 +304,46 @@ class expect(object):
                 exception_class.__name__, message_regex, caught_exception)
     
     throws = is_throwing = raise_ = raises = is_raising = to_raise
+    
+    def is_empty(self):
+        self._assert(len(self._expected) == 0, "to be empty")
+    
+    empty = is_empty
+    
+    def is_instance(self, a_class):
+        self._assert(isinstance(self._expected, a_class), "to be instance of '{}'", a_class.__name__)
+    
+    instanceof = instance_of = isinstance = is_instance
+    
+    def has_length(self, a_length):
+        self._assert(len(self._expected) == a_length, "to have length {}", a_length)
+    
+    len = length = count = has_count = has_length
+    
+    def is_greater(self, smaller):
+        self._assert(self._expected > smaller, "to be greater then {}", smaller)
+    
+    __gt__ = bigger = bigger_then = larger = larger_then = is_greater_then = is_greater
+    
+    def is_greater_or_equal(self, smaller_or_equal):
+        self._assert(self._expected >= smaller_or_equal, "to be greater or equal then {}", smaller_or_equal)
+    
+    __ge__ = greater_or_equal_then = is_greater_or_equal_then = greater_or_equal = is_greater_or_equal
+    
+    def is_less_then(self, greater):
+        self._assert(self._expected < greater, "to be less then {}", greater)
+    
+    __lt__ = smaller = smaller_then = lesser = lesser_then = less_then = smaller_then = is_smaller_then = is_less_then
+    
+    def is_less_or_equal(self, greater_or_equal):
+        self._assert(self._expected <= greater_or_equal, "to be less or equal then {}", greater_or_equal)
+    
+    __le__ = smaller_or_equal = smaller_or_equal_then = is_smaller_or_equal = is_smaller_or_equal_then = is_less_or_equal_then = is_less_or_equal
+    
+    def is_within_range(self, lower, higher):
+        self._assert(lower <= self._expected <= higher, "to be between {} and {}", lower, higher)
+    
+    is_between = is_within = is_within_range
 
 from unittest import TestCase, main
 class ExpectTest(TestCase):
@@ -405,9 +448,11 @@ class ExpectTest(TestCase):
         expect('foo').not_to.equal('fnord')
         expect(23).equals(23)
         expect([]).equals([])
-        marker = object()
-        expect(marker).to.be(marker)
+        expect(10) == 10
+        expect(10) != 12
         
+        expect(lambda: expect([]) == set()).to_raise(AssertionError, r"Expect \[\] to be equal to set\(\[\]\)")
+        expect(lambda: expect(1) != 1).to_raise(AssertionError, r"Expect 1 not to be equal to 1")
         expect(lambda: expect(23).to.equal(42)) \
             .to_raise(AssertionError, r"Expect 23 to be equal to 42")
         expect(lambda: expect(23).not_to.equal(23)) \
@@ -417,6 +462,8 @@ class ExpectTest(TestCase):
         expect(True).is_identical(True)
         expect(1).is_(1)
         expect(1).not_.to.be(2)
+        marker = object()
+        expect(marker).to.be(marker)
         
         expect(lambda: expect(1).to.be(2)) \
             .to_raise(AssertionError, r"Expect 1 to be 2")
@@ -524,6 +571,62 @@ class ExpectTest(TestCase):
         # Can catch exceptions that do not inherit from Exception to ensure everything is testable
         import sys
         expect(lambda: sys.exit('gotcha')).to_raise(SystemExit)
+    
+    def test_is_empty(self):
+        expect("").is_empty()
+        expect([]).is_empty()
+        expect(tuple()).is_empty()
+        expect(dict()).is_empty()
+        
+        expect("12").is_not.empty()
+        expect([12]).is_not.empty()
+        expect((12,23)).is_not.empty()
+        expect(dict(foo='bar')).is_not.empty()
+        
+        expect(lambda: expect("23").is_empty()) \
+            .to_raise(AssertionError, r"Expect '23' to be empty")
+    
+    def test_is_instance(self):
+        expect(dict()).is_instance(dict)
+        expect("").is_instance(str)
+        
+        expect(lambda: expect("").instanceof(list)).to_raise(AssertionError, r"Expect '' to be instance of 'list'")
+    
+    def test_has_length(self):
+        expect("123").has_length(3)
+        expect(set([1])).len(1)
+        
+        expect(lambda: expect([1]).to_have.length(23)) \
+            .to_raise(AssertionError, r"Expect \[1\] to have length 23")
+    
+    def test_is_greater_then(self):
+        expect(3).is_greater_then(1)
+        expect(3) > 1
+        expect(lambda: expect(10) > 15).to_raise(AssertionError, r"Expect 10 to be greater then 15")
+        expect(lambda: expect(1).is_greater_then(3)) \
+            .to_raise(AssertionError, r"Expect 1 to be greater then 3")
+    
+    def test_is_greater_or_equal_then(self):
+        expect(3).is_greater_or_equal_then(3)
+        expect(3).is_greater_or_equal_then(2)
+        expect(7) >= 7
+        expect(5) >= 2
+        
+        expect(lambda: expect(20) >= 30).to_raise(AssertionError, r"Expect 20 to be greater or equal then 30")
+    
+    def test_is_less_then(self):
+        expect(7).is_smaller_then(10)
+        expect(10) < 12
+        expect(lambda: expect(10) < 3).to_raise(AssertionError, "Expect 10 to be less then 3")
+    
+    def test_is_less_or_equal_then(self):
+        expect(10).is_smaller_or_equal_then(10)
+        expect(10) <= 10
+        expect(lambda: expect(10) <= 5).raises(AssertionError, "Expect 10 to be less or equal then 5")
+    
+    def test_is_within_range(self):
+        expect(3).is_within_range(1,10)
+        expect(lambda: expect(10).is_within_range(1,3)).to_raise(AssertionError, "Expect 10 to be between 1 and 3")
     
 
 if __name__ == '__main__':
