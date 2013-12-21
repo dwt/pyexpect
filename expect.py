@@ -252,11 +252,11 @@ class expect(object):
         is_right_class = isinstance(caught_exception, exception_class)
         if message_regex is None:
             self._assert(is_right_class, 
-                "to raise {} but it raised {!r}", exception_class.__name__, caught_exception)
+                "to raise {} but it raised:\n\t{!r}", exception_class.__name__, caught_exception)
         else:
             has_matching_message = re.search(message_regex, str(caught_exception)) is not None
             self._assert(is_right_class and has_matching_message, 
-                "to raise {} with message matching r'{}' but it raised {!r}", 
+                "to raise {} with message matching:\n\tr'{}'\nbut it raised:\n\t{!r}", 
                 exception_class.__name__, message_regex, caught_exception)
     
     throws = is_throwing = raise_ = raises = is_raising = to_raise
@@ -454,18 +454,18 @@ class ExpectTest(TestCase):
         
         # expected but not raising
         expect(lambda: expect(lambda:None).to_raise()) \
-            .to_raise(AssertionError, r"> to raise Exception but it raised None")
+            .to_raise(AssertionError, r"> to raise Exception but it raised:\n\tNone")
         # raising unexpected
         expect(lambda: expect(raiser).not_to.raise_()) \
-            .to_raise(AssertionError, r"> not to raise Exception but it raised TestException\('test_exception',\)$")
+            .to_raise(AssertionError, r"> not to raise Exception but it raised:\n\tTestException\('test_exception',\)$")
         expect(lambda: expect(raiser).not_to.raise_(TestException)) \
-            .to_raise(AssertionError, r"> not to raise TestException but it raised TestException\('test_exception',\)$")
+            .to_raise(AssertionError, r"> not to raise TestException but it raised:\n\tTestException\('test_exception',\)$")
         expect(lambda: expect(raiser).not_to.raise_(TestException, r"^test_exception$")) \
-            .to_raise(AssertionError, r"> not to raise TestException with message matching r'\^test_exception\$' but it raised TestException\('test_exception',\)$")
+            .to_raise(AssertionError, r"> not to raise TestException with message matching:\n\tr'\^test_exception\$'\nbut it raised:\n\tTestException\('test_exception',\)$")
             
         # raising right exception, wrong message
         expect(lambda: expect(raiser).to_raise(TestException, r'fnord')) \
-            .to_raise(AssertionError, r"> to raise TestException with message matching r'fnord' but it raised TestException\('test_exception',\)$")
+            .to_raise(AssertionError, r"> to raise TestException with message matching:\n\tr'fnord'\nbut it raised:\n\tTestException\('test_exception',\)$")
         
         # negative raises different (swallowed)
         expect(lambda: expect(raiser).not_to.raise_(ArithmeticError)).not_.to_raise()
