@@ -4,23 +4,9 @@
 # BSD Licensed <http://opensource.org/licenses/BSD-2-Clause>
 # Author: Martin Häcker mhaecker ät mac dot com
 
-__all__ = ['expect', 'returning_expect']
+__all__ = ['expect']
 
 import re
-
-# REFACT: fold into expect as class method / class property
-def returning_expect(expected):
-    """Convenience method for a non raising expect().
-    
-    Works like a regular expect(), but instead of raising AssertionError it returns
-    a (boolean, string) tupple that contains the expectation result and either the empty string
-    or the Expectation message that would have been on the AssertionError.
-    
-    To get a callable reuseable expectation, use it like this:
-    
-        an_expectation = lambda expected: returning_expect(expected).to_be('fnord')
-    """
-    return expect(expected, should_raise=False)
 
 class expect(object):
     """Minimal but very flexible implementation of the expect pattern.
@@ -78,8 +64,8 @@ class expect(object):
         
         message
             can be a custom message that replaces the original message in case of error.
-            You can access the original message with the format `{assertion_message}`.
-            For more details see the source of self._message()
+            You can access the original message with the format `{assertion_message}` in 
+            your message. For more details see the source of self._message()
         """
         self._expected = expected
         self._should_raise = should_raise
@@ -87,6 +73,34 @@ class expect(object):
         self._expected_assertion_result = True
         self._selected_matcher = None
         self._selected_matcher_name = None
+    
+    @classmethod
+    def with_message(cls, message, expected, **kwargs):
+        """Convenience method to specify a custom message to expect()
+        
+        Works like the regular expect(), but instead of the error message from the matcher,
+        the provided `message` will be used.
+        
+        You can access the original message with the format `{assertion_message}` in 
+        your message. For more details see the source of self._message()
+        """
+        return cls(expected, message=message, **kwargs)
+    
+    @classmethod
+    def returning(cls, expected, **kwargs):
+        """Convenience method for a non raising expect()
+        
+        Works like a regular expect(), but instead of raising AssertionError it returns
+        a (boolean, string) tupple that contains the expectation result and either the empty string
+        or the Expectation message that would have been on the AssertionError.
+        
+        To get a callable reuseable expectation, use it like this:
+        
+            an_expectation = lambda expected: expect.returning(expected).to_be('fnord')
+        """
+        return cls(expected, should_raise=False, **kwargs)
+    
+    ## Internals ########################################################################################
     
     def _is_negative(self):
         return self._expected_assertion_result is False
@@ -316,17 +330,16 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"^fnord <Expect True not to be True> fnord$")
         expect(messaging('{expected}-{optional_negation}')).to_raise(AssertionError, r"^True- not $")
         expect(messaging('{expected}')).to_raise(AssertionError, r"^True$")
+        
+        expect(lambda: expect.with_message('fnord', True).to.be(False)) \
+            .to_raise(AssertionError, r"^fnord$")
     
-    def _test_should_allow_to_formulate_abstract_expectations(self):
+    def test_should_allow_to_formulate_abstract_expectations(self):
         # Idea: have a good api to check expectations without raising
-        # REFACT: change syntax: expect.returning(foo).to_be(foo)
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
         expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
-        expect(returning_expect(False).to_be(False)).equals((True, ""))
-        expect(returning_expect(False).to_be(True)).to_equal((False, "Expect False to be True"))
-    
-    def _test_should_allow_to_combine_abstract_assertions_and_custom_messages(self):
-        pass
+        expect(expect.returning(False).to_be(False)).equals((True, ""))
+        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
     # Matchers
     
