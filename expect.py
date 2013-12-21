@@ -204,7 +204,7 @@ class expect(object):
         # is not subdict: any key or value differs
         subset = set(a_subdict.iteritems())
         superset = set(self._expected.iteritems())
-        self._assert(len(subset - superset) == 0, 'to contain dict({})', a_subdict)
+        self._assert(len(subset - superset) == 0, 'to contain dict {}', a_subdict)
     
     includes_dict = contains_dict = subdict = has_subdict
     
@@ -372,11 +372,11 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"Expect 42 to be a dictionary")
         
         expect(lambda: expect(dict()).to_have.subdict(foo='bar'))\
-            .to_raise(AssertionError, r"Expect {} to contain dict\({'foo': 'bar'}\)")
+            .to_raise(AssertionError, r"Expect {} to contain dict {'foo': 'bar'}")
         expect(lambda: expect(dict(foo='bar')).to_have.subdict(foo='baz'))\
-            .to_raise(AssertionError, r"Expect {'foo': 'bar'} to contain dict\({'foo': 'baz'}\)")
+            .to_raise(AssertionError, r"Expect {'foo': 'bar'} to contain dict {'foo': 'baz'}")
         expect(lambda: expect(dict(foo='bar')).not_to_have.subdict(foo='bar'))\
-            .to_raise(AssertionError, r"Expect {'foo': 'bar'} not to contain dict\({'foo': 'bar'}\)")
+            .to_raise(AssertionError, r"Expect {'foo': 'bar'} not to contain dict {'foo': 'bar'}")
     
     def test_is_matching(self):
         expect("abbbababababaaaab").is_matching(r"[ab]+")
