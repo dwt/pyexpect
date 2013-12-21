@@ -23,7 +23,7 @@ def returning_expect(expected):
     return expect(expected, should_raise=False)
 
 class expect(object):
-    """Minimal implementation of the expect pattern.
+    """Minimal but very flexible implementation of the expect pattern.
     
     The whole point of the expect patter is to allow concise assertions 
     that generate predictable and good error messages.
