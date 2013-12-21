@@ -75,6 +75,9 @@ class expect(object):
         self._selected_matcher = None
         self._selected_matcher_name = None
     
+    def _is_negative(self):
+        return self._expected_assertion_result is False
+    
     def __getattribute__(self, name):
         """Allows you to chain any python identifier to this object and keep 
         chaining for as long as you want as syntactic sugar.
@@ -131,14 +134,15 @@ class expect(object):
         
         return (True, "")
     
-    def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
-        def message():
-            negation = ' not ' if self._expected_assertion_result is False else ' '
-            return "Expect {!r}".format(self._expected) \
-                + negation \
-                + message_format.format(*message_positionals, **message_keywords)
+    def _message(self, message_format, *message_positionals, **message_keywords):
+        negation = ' not ' if self._expected_assertion_result is False else ' '
+        return "Expect {!r}".format(self._expected) \
+            + negation \
+            + message_format.format(*message_positionals, **message_keywords)
         
-        assert assertion is self._expected_assertion_result, message()
+    def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
+        assert assertion is self._expected_assertion_result, \
+            self._message(message_format, *message_positionals, **message_keywords)
     
     def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
         if self._expected_assertion_result is False:
@@ -195,13 +199,14 @@ class expect(object):
     contain = contains = include = includes = does_include
     
     def has_subdict(self, **a_subdict):
-        for key, value in a_subdict.iteritems():
-            self._assert_if_positive(key in self._expected, 'to have key "{}"', key)
-            
-            if key in self._expected:
-                self._assert(value == self._expected[key], "to have value of {} equal {}", key, value)
+        assert isinstance(self._expected, dict), self._message("to be a dictionary", self._expected)
+        # is subdict: all keys and values appear
+        # is not subdict: any key or value differs
+        subset = set(a_subdict.iteritems())
+        superset = set(self._expected.iteritems())
+        self._assert(len(subset - superset) == 0, 'to contain dict({})', a_subdict)
     
-    subdict = has_subdict
+    includes_dict = contains_dict = subdict = has_subdict
     
     def to_match(self, regex):
         import re
@@ -260,21 +265,6 @@ class ExpectTest(TestCase):
         
         expect(calls).to.contain((instance, tuple()))
         expect(calls).to.contain((instance, ('bar', 'baz')))
-    
-    def test_has_subdict(self):
-        expect(dict()).to_have.subdict()
-        expect(dict(foo='bar')).to.have.subdict()
-        expect(dict(foo='bar')).to_have.subdict(foo='bar')
-        expect(dict(foo='bar')).not_to.have.subdict(bar='bar')
-        
-        self.fail('first differing key makes it not a subdict')
-        
-        expect(lambda: expect(dict()).to_have.subdict(foo='bar'))\
-            .to_raise(AssertionError, r'Expect {} to have key "foo"')
-        expect(lambda: expect(dict(foo='bar')).to_have.subdict(foo='baz'))\
-            .to_raise(AssertionError, r"Expect {'foo': 'bar'} to have value of foo equal baz")
-        expect(lambda: expect(dict(foo='bar')).not_to_have.subdict(foo='bar'))\
-            .to_raise(AssertionError, r"Expect {'foo': 'bar'} not to have value of foo equal bar")
     
     def test_is_equal(self):
         expect('foo').equals('foo')
@@ -361,6 +351,23 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"Expect 23 is included in \[0, 8, 15]")
         expect(lambda: expect(23).is_included_in([0,8,15])) \
             .to_raise(AssertionError, r"Expect 23 is included in \[0, 8, 15]")
+    
+    def test_has_subdict(self):
+        expect(dict()).to_have.subdict()
+        expect(dict(foo='bar')).to.have.subdict()
+        expect(dict(foo='bar')).to_have.subdict(foo='bar')
+        expect(dict(foo='bar')).not_to.have.subdict(bar='bar')
+        expect(dict(foo='bar')).not_to.have.subdict(foo='bar', bar='foo')
+        
+        expect(lambda: expect(42).has_subdict())\
+            .to_raise(AssertionError, r"Expect 42 to be a dictionary")
+        
+        expect(lambda: expect(dict()).to_have.subdict(foo='bar'))\
+            .to_raise(AssertionError, r"Expect {} to contain dict\({'foo': 'bar'}\)")
+        expect(lambda: expect(dict(foo='bar')).to_have.subdict(foo='baz'))\
+            .to_raise(AssertionError, r"Expect {'foo': 'bar'} to contain dict\({'foo': 'baz'}\)")
+        expect(lambda: expect(dict(foo='bar')).not_to_have.subdict(foo='bar'))\
+            .to_raise(AssertionError, r"Expect {'foo': 'bar'} not to contain dict\({'foo': 'bar'}\)")
     
     def test_is_matching(self):
         expect("abbbababababaaaab").is_matching(r"[ab]+")
