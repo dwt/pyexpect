@@ -134,6 +134,8 @@ class expect(object):
         
         return (True, "")
     
+    # REFACT: would be nice if the name of this message makes it clear how the 
+    # message should be worded to give a good error message
     def _message(self, message_format, *message_positionals, **message_keywords):
         negation = ' not ' if self._expected_assertion_result is False else ' '
         return "Expect {!r}".format(self._expected) \
@@ -161,10 +163,12 @@ class expect(object):
     
     def is_true(self):
         self._assert(self._expected is True, "to be True")
+    
     true = is_true
     
     def is_false(self):
         self._assert(self._expected is False, "to be False")
+    
     false = is_false
     
     def is_equal(self, something):
@@ -175,15 +179,22 @@ class expect(object):
     def to_be(self, something):
         self._assert(something is self._expected, "to be {}", something)
     
-    is_ = be = is_same = is_identical = to_be
+    is_ = be = be_same = is_same = be_identical = is_identical = to_be
     
     def is_trueish(self):
         self._assert(bool(self._expected) is True, "to be trueish")
+    
     truish = trueish = is_trueish
     
     def is_falseish(self):
         self._assert(bool(self._expected) is False, "to be falseish")
+    
     falsish = falseish = is_falseish
+    
+    def does_include(self, something):
+        self._assert(something in self._expected, "to include {}", something)
+    
+    contain = contains = include = includes = does_include
     
     def is_included_in(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
@@ -192,26 +203,23 @@ class expect(object):
             sequence.extend(additional_atoms)
         
         self._assert(self._expected in sequence, "is included in {}", sequence)
+    
     in_ = included_in = is_included_in
     
-    def does_include(self, something):
-        self._assert(something in self._expected, "to include {}", something)
-    contain = contains = include = includes = does_include
-    
-    def has_subdict(self, **a_subdict):
+    def has_sub_dict(self, **a_subdict):
         assert isinstance(self._expected, dict), self._message("to be a dictionary", self._expected)
-        # is subdict: all keys and values appear
-        # is not subdict: any key or value differs
+        
         subset = set(a_subdict.iteritems())
         superset = set(self._expected.iteritems())
         self._assert(len(subset - superset) == 0, 'to contain dict {}', a_subdict)
     
-    includes_dict = contains_dict = subdict = has_subdict
+    includes_dict = contains_dict = sub_dict = subdict = has_subdict = has_sub_dict
     
     def to_match(self, regex):
         assert isinstance(self._expected, basestring), self._message("to be a string")
-        import re
+        
         self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r'{}'", regex)
+    
     match = matches = is_matching = to_match
     
     def to_raise(self, exception_class=Exception, message_regex=None):
@@ -229,15 +237,18 @@ class expect(object):
             self._assert_if_positive(isinstance(caught_exception, exception_class), 
                 "to raise {} but it raised {!r}", exception_class.__name__, caught_exception)
             self._assert(re.search(message_regex, str(caught_exception)) is not None, 
-                "to raise {} with message matching r'{}' but it raised {!r}", exception_class.__name__, message_regex, caught_exception)
+                "to raise {} with message matching r'{}' but it raised {!r}", 
+                exception_class.__name__, message_regex, caught_exception)
     throws = is_throwing = raise_ = raises = is_raising = to_raise
 
 from unittest import TestCase, main
 class ExpectTest(TestCase):
     
+    # Meta functionality
+    
     def test_good_error_message_when_calling_non_existing_matcher(self):
-        self.assertRaisesRegexp(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'",
-            lambda: expect('fnord').nonexisting_matcher())
+        expect(lambda: expect('fnord').nonexisting_matcher()) \
+            .to_raise(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'")
     
     def test_should_ensure_not_is_on_word_boundaries(self):
         expect(lambda: expect(True).nothing.to_be(True)).not_.to_raise()
@@ -258,14 +269,16 @@ class ExpectTest(TestCase):
     
     def test_can_add_custom_matchers(self):
         calls = []
-        expect.custom_matcher = lambda self, *arguments: calls.append((self, arguments))
+        expect.custom_matcher = lambda *arguments: calls.append(arguments)
         
         instance = expect('foo')
         instance.custom_matcher()
         instance.custom_matcher('bar', 'baz')
         
-        expect(calls).to.contain((instance, tuple()))
-        expect(calls).to.contain((instance, ('bar', 'baz')))
+        expect(calls).to.contain((instance,))
+        expect(calls).to.contain((instance, 'bar', 'baz'))
+    
+    # Matchers
     
     def test_is_equal(self):
         expect('foo').equals('foo')
@@ -276,9 +289,9 @@ class ExpectTest(TestCase):
         marker = object()
         expect(marker).to.be(marker)
         
-        expect(lambda: expect(23).to.equal(42))\
+        expect(lambda: expect(23).to.equal(42)) \
             .to_raise(AssertionError, r"Expect 23 to be equal to 42")
-        expect(lambda: expect(23).not_to.equal(23))\
+        expect(lambda: expect(23).not_to.equal(23)) \
             .to_raise(AssertionError, r"Expect 23 not to be equal to 23")
     
     def test_is_trueish(self):
@@ -290,9 +303,9 @@ class ExpectTest(TestCase):
         expect([]).is_not.trueish()
         expect("").is_not.trueish()
         
-        expect(lambda: expect([]).to_be.trueish())\
+        expect(lambda: expect([]).to_be.trueish()) \
             .to_raise(AssertionError, r"Expect \[\] to be trueish")
-        expect(lambda: expect([1]).not_to_be.trueish())\
+        expect(lambda: expect([1]).not_to_be.trueish()) \
             .to_raise(AssertionError, r"Expect \[1\] not to be trueish")
     
     def test_is_falseish(self):
@@ -304,7 +317,7 @@ class ExpectTest(TestCase):
         expect(tuple()).to.be.falseish()
         expect('foo').not_to.be.falsish()
         
-        expect(lambda: expect('foo').to.be.falsish())\
+        expect(lambda: expect('foo').to.be.falsish()) \
             .to_raise(AssertionError, r"")
     
     def test_is_true(self):
@@ -313,9 +326,9 @@ class ExpectTest(TestCase):
         expect([1]).is_not.true()
         expect("1").is_not.true()
         
-        expect(lambda: expect('fnord').to_be.true())\
+        expect(lambda: expect('fnord').to_be.true()) \
             .to_raise(AssertionError, r"Expect 'fnord' to be True")
-        expect(lambda: expect(True).not_to_be.true())\
+        expect(lambda: expect(True).not_to_be.true()) \
             .to_raise(AssertionError, r"Expect True not to be True")
     
     def test_is_false(self):
@@ -326,9 +339,9 @@ class ExpectTest(TestCase):
         expect(0).not_to_be.false()
         
         
-        expect(lambda: expect('fnord').to.be.false())\
+        expect(lambda: expect('fnord').to.be.false()) \
             .to_raise(AssertionError, r"Expect 'fnord' to be False")
-        expect(lambda: expect(0).to.be.false())\
+        expect(lambda: expect(0).to.be.false()) \
             .to_raise(AssertionError, r"Expect 0 to be False")
     
     def test_is_identical(self):
@@ -371,11 +384,11 @@ class ExpectTest(TestCase):
         expect(lambda: expect(42).has_subdict())\
             .to_raise(AssertionError, r"Expect 42 to be a dictionary")
         
-        expect(lambda: expect(dict()).to_have.subdict(foo='bar'))\
+        expect(lambda: expect(dict()).to_have.subdict(foo='bar')) \
             .to_raise(AssertionError, r"Expect {} to contain dict {'foo': 'bar'}")
-        expect(lambda: expect(dict(foo='bar')).to_have.subdict(foo='baz'))\
+        expect(lambda: expect(dict(foo='bar')).to_have.subdict(foo='baz')) \
             .to_raise(AssertionError, r"Expect {'foo': 'bar'} to contain dict {'foo': 'baz'}")
-        expect(lambda: expect(dict(foo='bar')).not_to_have.subdict(foo='bar'))\
+        expect(lambda: expect(dict(foo='bar')).not_to_have.subdict(foo='bar')) \
             .to_raise(AssertionError, r"Expect {'foo': 'bar'} not to contain dict {'foo': 'bar'}")
     
     def test_is_matching(self):
@@ -409,7 +422,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect(42).not_.to_raise()) \
             .to_raise(AssertionError, r"Expect 42 to be callable")
         
-        expect(lambda: expect(lambda:None).to_raise())\
+        expect(lambda: expect(lambda:None).to_raise()) \
             .to_raise(AssertionError, r"Expect <function <lambda> .*> to raise Exception but it raised None")
         expect(lambda: expect(raiser).not_to.raise_()) \
             .to_raise(AssertionError, r"^Expect <function raiser .*> not to raise Exception but it raised AssertionError\('fnord',\)$")
