@@ -8,6 +8,7 @@ __all__ = ['expect', 'returning_expect']
 
 import re
 
+# REFACT: fold into expect as class method / class property
 def returning_expect(expected):
     """Convenience method for a non raising expect().
     
@@ -114,7 +115,10 @@ class expect(object):
     
     def __call__(self, *args, **kwargs):
         """Called whenever you actualy invoke a matcher. 
-        Provides a good error message if you mistype"""
+        
+        Provides a good error message if you mistype the matcher name.
+        
+        Supports custom messages with the message keyword argument"""
         # Integration with py.test - this hides the __call__ method from the generated traceback
         __tracebackhide__ = True
         
@@ -159,7 +163,15 @@ class expect(object):
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
     ## Matchers #########################################################################################
-    # REFACT: find a naming rule that fits all matchers. Should be clear, short, active, ...
+    
+    # On naming matchers: Their name should be clear and fit in with the naming scheme of the existing 
+    # matchers. That is: short, active, prepended with a conjugation of be
+    # Sensible alternative names are encouraged after the method definition to allow the matchers
+    # To be used sensibly in a sentence like matter for those who want it
+    
+    # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
+    # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
+    # `hf_unhide` is ofthen the keyword here.
     
     def is_true(self):
         self._assert(self._expected is True, "to be True")
@@ -254,6 +266,17 @@ class ExpectTest(TestCase):
     
     # Meta functionality
     
+    def test_can_add_custom_matchers(self):
+        calls = []
+        expect.custom_matcher = lambda *arguments: calls.append(arguments)
+        
+        instance = expect('foo')
+        instance.custom_matcher()
+        instance.custom_matcher('bar', 'baz')
+        
+        expect(calls).to.contain((instance,))
+        expect(calls).to.contain((instance, 'bar', 'baz'))
+    
     def test_good_error_message_when_calling_non_existing_matcher(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
             .to_raise(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'")
@@ -268,39 +291,18 @@ class ExpectTest(TestCase):
         # expect(key).is_(self._expected, message=Message('{} foo {}', foo, bar))
         self.fail()
     
-    def test_should_allow_to_formulate_abstract_expectations(self):
+    def _test_should_allow_to_formulate_abstract_expectations(self):
         # Idea: have a good api to check expectations without raising
+        # REFACT: change syntax: expect.returning(foo).to_be(foo)
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
         expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
         expect(returning_expect(False).to_be(False)).equals((True, ""))
         expect(returning_expect(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
-    def test_can_add_custom_matchers(self):
-        calls = []
-        expect.custom_matcher = lambda *arguments: calls.append(arguments)
-        
-        instance = expect('foo')
-        instance.custom_matcher()
-        instance.custom_matcher('bar', 'baz')
-        
-        expect(calls).to.contain((instance,))
-        expect(calls).to.contain((instance, 'bar', 'baz'))
+    def _test_should_allow_to_combine_abstract_assertions_and_custom_messages(self):
+        pass
     
     # Matchers
-    
-    def test_is_equal(self):
-        expect('foo').equals('foo')
-        expect('foo').to.equal('foo')
-        expect('foo').not_to.equal('fnord')
-        expect(23).equals(23)
-        expect([]).equals([])
-        marker = object()
-        expect(marker).to.be(marker)
-        
-        expect(lambda: expect(23).to.equal(42)) \
-            .to_raise(AssertionError, r"Expect 23 to be equal to 42")
-        expect(lambda: expect(23).not_to.equal(23)) \
-            .to_raise(AssertionError, r"Expect 23 not to be equal to 23")
     
     def test_is_trueish(self):
         expect(True).is_.trueish()
@@ -351,6 +353,20 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"Expect 'fnord' to be False")
         expect(lambda: expect(0).to.be.false()) \
             .to_raise(AssertionError, r"Expect 0 to be False")
+    
+    def test_is_equal(self):
+        expect('foo').equals('foo')
+        expect('foo').to.equal('foo')
+        expect('foo').not_to.equal('fnord')
+        expect(23).equals(23)
+        expect([]).equals([])
+        marker = object()
+        expect(marker).to.be(marker)
+        
+        expect(lambda: expect(23).to.equal(42)) \
+            .to_raise(AssertionError, r"Expect 23 to be equal to 42")
+        expect(lambda: expect(23).not_to.equal(23)) \
+            .to_raise(AssertionError, r"Expect 23 not to be equal to 23")
     
     def test_is_identical(self):
         expect(True).is_identical(True)
