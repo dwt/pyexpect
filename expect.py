@@ -4,6 +4,10 @@
 # BSD Licensed <http://opensource.org/licenses/BSD-2-Clause>
 # Author: Martin Häcker mhaecker ät mac dot com
 
+# Inspired by:
+# Rubys RSpec that got me longing for a similar syntax
+# Robert who suggested lots of great api ideas
+
 __all__ = ['expect']
 
 import re
@@ -93,7 +97,7 @@ class expect(object):
         return cls(expected, message=message, **kwargs)
     
     @classmethod
-    def returning(cls, expected, **kwargs):
+    def returning(cls, expected, message=None, **kwargs):
         """Convenience method for a non raising expect()
         
         Works like a regular expect(), but instead of raising AssertionError it returns
@@ -104,7 +108,7 @@ class expect(object):
         
             an_expectation = lambda expected: expect.returning(expected).to_be('fnord')
         """
-        return cls(expected, should_raise=False, **kwargs)
+        return cls(expected, should_raise=False, message=message, **kwargs)
     
     ## Internals ########################################################################################
     
@@ -155,13 +159,13 @@ class expect(object):
         __tracebackhide__ = True
         
         if self._selected_matcher is None:
-            raise AssertionError("Tried to call non existing matcher '{}'".format(self._selected_matcher_name))
+            raise AssertionError("Tried to call non existing matcher '{}' (Patches welcome!)".format(self._selected_matcher_name))
         
         # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
         # Hides the actual matcher and all the methods it calls to assert stuff.
         try:
             self._selected_matcher(*args, **kwargs)
-        except AssertionError, assertion:
+        except AssertionError as assertion:
             if self._should_raise:
                 raise assertion # hide internal expect() methods from backtrace
             
@@ -291,7 +295,7 @@ class expect(object):
         # import sys; sys.stdout = sys.__stdout__; from bpdb import set_trace; set_trace()
         caught_exception = None
         try: self._expected()
-        except BaseException, exception: caught_exception = exception
+        except BaseException as exception: caught_exception = exception
         
         is_right_class = isinstance(caught_exception, exception_class)
         if message_regex is None:
