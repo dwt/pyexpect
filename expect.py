@@ -130,7 +130,7 @@ class expect(object):
                 raise assertion # hide internal expect() methods from backtrace
             
             # Support returning_expect
-            return (False, assertion.message)
+            return (False, str(assertion))
         
         return (True, "")
     
