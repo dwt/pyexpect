@@ -15,7 +15,8 @@ class expect(object):
     that generate predictable and good error messages.
     
     This is best explained in cotrast to the classic assertion pattern like the python
-    unittest module uses. For example:
+    unittest module uses. However, these assertions can be used anywhere and do not 
+    depend on any unittest package. But now for the example:
     
         self.assertEquals('foo', 'bar)
     
@@ -52,7 +53,12 @@ class expect(object):
     Additionally they are not coupled to any TestCase class so you can easily reuse them 
     anywhere in your code to formalize expectations that your code has about some internal state.
     
-    If you want to add custom matchers, just add them as instance methods to the expect object.
+    If you want to add custom matchers, just add them as instance methods to the expect object 
+    like this:
+    
+        def my_matcher(self, arguments, defaults='something):
+            pass # whatever you have to do. For helpers and availeable values see expect()
+        expect.new_matcher = my_matcher
     """
     
     def __init__(self, expected, should_raise=True, message=None):
