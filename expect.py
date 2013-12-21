@@ -69,9 +69,21 @@ class expect(object):
     If you want to add custom matchers, just add them as instance methods to the expect object.
     """
     
-    def __init__(self, expected, should_raise=True):
+    def __init__(self, expected, should_raise=True, message=None):
+        """Initialize a useable assertion object that you can chain off of.
+        
+        should_raise=False
+            will toggle the behavior of the assertion to return a tuple
+            (boolean, string) instead of raising an AssertionError or not raising
+        
+        message
+            can be a custom message that replaces the original message in case of error.
+            You can access the original message with the format `{assertion_message}`.
+            For more details see the source of self._message()
+        """
         self._expected = expected
         self._should_raise = should_raise
+        self._custom_message = message
         self._expected_assertion_result = True
         self._selected_matcher = None
         self._selected_matcher_name = None
@@ -141,11 +153,20 @@ class expect(object):
     # REFACT: would be nice if the name of this message makes it clear how the 
     # message should be worded to give a good error message
     def _message(self, message_format, *message_positionals, **message_keywords):
-        negation = ' not ' if self._expected_assertion_result is False else ' '
-        return "Expect {!r}".format(self._expected) \
-            + negation \
-            + message_format.format(*message_positionals, **message_keywords)
+        expected = self._expected
+        optional_negation = ' not ' if self._expected_assertion_result is False else ' '
+        message = message_format.format(*message_positionals, **message_keywords)
+        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(
+            expected=expected,
+            optional_negation=optional_negation,
+            message=message,
+        )
         
+        if self._custom_message is not None:
+            return self._custom_message.format(**locals())
+        
+        return assertion_message
+    
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
         assert assertion is self._expected_assertion_result, \
             self._message(message_format, *message_positionals, **message_keywords)
@@ -287,9 +308,14 @@ class ExpectTest(TestCase):
         expect(lambda: expect(True).an_not_ation.to_be(True)).to_raise()
         expect(lambda: expect(True).an_not.to_be(True)).to_raise()
     
-    def _test_should_allow_custom_messages(self):
-        # expect(key).is_(self._expected, message=Message('{} foo {}', foo, bar))
-        self.fail()
+    def test_should_allow_custom_messages(self):
+        def messaging(message):
+            return lambda: expect(True, message=message).not_.to_be(True)
+        expect(messaging('fnord')).to_raise(AssertionError, r"^fnord$")
+        expect(messaging('fnord <{assertion_message}> fnord')) \
+            .to_raise(AssertionError, r"^fnord <Expect True not to be True> fnord$")
+        expect(messaging('{expected}-{optional_negation}')).to_raise(AssertionError, r"^True- not $")
+        expect(messaging('{expected}')).to_raise(AssertionError, r"^True$")
     
     def _test_should_allow_to_formulate_abstract_expectations(self):
         # Idea: have a good api to check expectations without raising
