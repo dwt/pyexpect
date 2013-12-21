@@ -384,26 +384,33 @@ class ExpectTest(TestCase):
         def raiser(): assert False, 'fnord'
         expect(raiser).to_raise()
         expect(raiser).to_raise(AssertionError)
-        expect(raiser).not_to.raise_(ArithmeticError)
+        
         expect(lambda:None).not_to.raise_()
         expect(lambda:None).not_to.raise_(AssertionError)
+        expect(raiser).not_to.raise_(ArithmeticError)
+        
         expect(raiser).to_raise(AssertionError, r'fno[rl]d')
         expect(raiser).not_to.raise_(AssertionError, r'foobar')
-        
         
         expect(lambda: expect(42).to_raise()) \
             .to_raise(AssertionError, r"Expect 42 to be callable")
         expect(lambda: expect(42).not_.to_raise()) \
             .to_raise(AssertionError, r"Expect 42 to be callable")
         
-        expect(lambda: expect(raiser).to_raise(NameError, r'fnord')) \
-            .to_raise(AssertionError, r"^Expect <function raiser .*> to raise NameError but it raised AssertionError\('fnord',\)$")
+        expect(lambda: expect(lambda:None).to_raise())\
+            .to_raise(AssertionError, r"Expect <function <lambda> .*> to raise Exception but it raised None")
         expect(lambda: expect(raiser).not_to.raise_()) \
             .to_raise(AssertionError, r"^Expect <function raiser .*> not to raise Exception but it raised AssertionError\('fnord',\)$")
         expect(lambda: expect(raiser).not_to.raise_(AssertionError)) \
             .to_raise(AssertionError, r"^Expect <function raiser .*> not to raise AssertionError but it raised AssertionError\('fnord',\)$")
         expect(lambda: expect(raiser).to_raise(AssertionError, r'fnold')) \
             .to_raise(AssertionError, r"^Expect <function raiser .*> to raise AssertionError with message matching r'fnold' but it raised AssertionError\('fnord',\)$")
+        expect(lambda: expect(raiser).to_raise(NameError, r'fnord')) \
+            .to_raise(AssertionError, r"^Expect <function raiser .*> to raise NameError but it raised AssertionError\('fnord',\)$")
+        
+        # Can catch exceptions that do not inherit from Exception to ensure everything is testable
+        import sys
+        expect(lambda: sys.exit('gotcha')).to_raise(SystemExit)
     
 
 if __name__ == '__main__':
