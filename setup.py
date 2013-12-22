@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf8
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='pyexpect',
