@@ -65,6 +65,10 @@ class expect(object):
         expect.new_matcher = my_matcher
     """
     
+    # TODO: Consider to add with statement support
+    # with expect.raises(KeyError, 'fnord'):
+    #     something_that_raises()
+    
     def __init__(self, expected, should_raise=True, message=None):
         """Initialize a useable assertion object that you can chain off of.
         
@@ -289,7 +293,7 @@ class expect(object):
         ok and expected.
         """
         # REFACT: consider to change to_raise to let all unexpected exceptions pass through
-        # Not sure what that means to correctly implement the negative side of that
+        # Not sure what that means to correctly implement the negative side though
         assert callable(self._expected), "Expect {!r} to be callable".format(self._expected)
         
         # import sys; sys.stdout = sys.__stdout__; from bpdb import set_trace; set_trace()
