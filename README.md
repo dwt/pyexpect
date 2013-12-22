@@ -167,11 +167,13 @@ anywhere in your code to formalize expectations that your code has about some in
             expect(some_argument).is_within_range(3,20)
             something(some_argument)
     
-    And should you need it, you can switch the assertions from throwing to returning a `(bool, string)` tuple so you can reuse it in your api. (Of course with full controll over the returned / thrown error messages)
+    And should you need it, you can switch the assertions from throwing to returning a `(bool, string)` tuple so you can reuse it in your api.
     
         from pyexpect import expect
         def some_api(something):
             was_success, explanation = expect.returning(something) == 23
             if not was_success: register_error(explanation)
+    
+    And should you need it, you can override the error messages generated without needing to change the matchers. See `expect.with_message()` for details.
 
 1.  Test coverage: Of course pyexpect has full test coverage ensuring that it does exactly what you expect it to do.
