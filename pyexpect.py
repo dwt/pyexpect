@@ -62,7 +62,7 @@ class expect(object):
         self._selected_matcher_name = None
     
     @classmethod
-    def with_message(cls, message, expected, **kwargs):
+    def with_message(cls, message, expected, should_raise=True):
         """Convenience method to specify a custom message to expect()
         
         Works like the regular expect(), but instead of the error message from the matcher,
@@ -71,10 +71,10 @@ class expect(object):
         You can access the original message with the format `{assertion_message}` in 
         your message. For more details see the source of self._message()
         """
-        return cls(expected, message=message, **kwargs)
+        return cls(expected, message=message, should_raise=should_raise)
     
     @classmethod
-    def returning(cls, expected, message=None, **kwargs):
+    def returning(cls, expected, message=None):
         """Convenience method for a non raising expect()
         
         Works like a regular expect(), but instead of raising AssertionError it returns
@@ -85,7 +85,7 @@ class expect(object):
         
             an_expectation = lambda expected: expect.returning(expected).to_be('fnord')
         """
-        return cls(expected, should_raise=False, message=message, **kwargs)
+        return cls(expected, should_raise=False, message=message)
     
     ## Internals ########################################################################################
     
