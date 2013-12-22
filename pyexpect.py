@@ -146,7 +146,8 @@ class expect(object):
             self._selected_matcher(*args, **kwargs)
         except AssertionError as assertion:
             if self._should_raise:
-                raise assertion # hide internal expect() methods from backtrace
+                # hide internal expect() methods from backtrace
+                raise assertion
             
             # Support returning_expect
             return (False, str(assertion))
