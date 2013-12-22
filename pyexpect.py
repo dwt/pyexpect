@@ -140,6 +140,7 @@ class expect(object):
         
         # If you include not somewhere in the called attributes name, 
         # switch the expectation to negative.
+        # REFACT: consider to support calling negated matchers directly with something like: expect(3).not_equals(2)
         if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
             self._expected_assertion_result = False
         
@@ -163,6 +164,7 @@ class expect(object):
         __tracebackhide__ = True
         
         if self._selected_matcher is None:
+            # REFACT: consider raising NotImplementedError
             raise AssertionError("Tried to call non existing matcher '{}' (Patches welcome!)".format(self._selected_matcher_name))
         
         # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
@@ -178,7 +180,7 @@ class expect(object):
         
         return (True, "")
     
-    # REFACT: would be nice if the name of this message makes it clear how the 
+    # REFACT: would be nice if the name of this method makes it clear how the 
     # message should be worded to give a good error message
     def _message(self, message_format, *message_positionals, **message_keywords):
         expected = self._expected
