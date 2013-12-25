@@ -69,7 +69,7 @@ anywhere in your code to formalize expectations that your code has about some in
         expect(True).is_equal(True)
         expect(True) == True
         expect(raising_calable).raises()
-        expect(raising_calable).to_raises()
+        expect(raising_calable).to_raise()
     
     Choose whatever makes sense for your specific test to read well so that reading the test later feels natural and transports the meaning of the code as best as possible.
 
