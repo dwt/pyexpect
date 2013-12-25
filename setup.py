@@ -7,7 +7,7 @@ setup(
     name='pyexpect',
     version='1.0',
     description='Python expectaton library',
-    long_description=file('README.md').readlines(),
+    long_description=file('README.md').read(),
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
     url='https://bitbucket.org/dwt/pyexpect',
