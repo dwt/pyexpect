@@ -246,14 +246,21 @@ class expect(object):
     
     in_ = included_in = is_included_in
     
-    def has_sub_dict(self, **a_subdict):
+    def has_sub_dict(self, a_subdict=None, **kwargs):
         assert isinstance(self._expected, dict), self._message("to be a dictionary", self._expected)
         
-        subset = set(a_subdict.iteritems())
-        superset = set(self._expected.iteritems())
-        self._assert(len(subset - superset) == 0, 'to contain dict {}', a_subdict)
+        if a_subdict is None:
+            a_subdict = dict()
+        a_subdict.update(kwargs)
+        
+        actual_keys = a_subdict.keys()
+        actual_items = a_subdict.items()
+        expected_items = [(key, self._expected.get(key)) for key in actual_keys]
+        # superset = set(self._expected.iteritems())
+        # REFACT: subset.issubset(superset)
+        self._assert(expected_items == actual_items, 'to contain dict {}', a_subdict)
     
-    includes_dict = contains_dict = sub_dict = subdict = has_subdict = has_sub_dict
+    includes_dict = contains_dict = sub_dict = subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict
     
     def to_match(self, regex):
         assert isinstance(self._expected, basestring), self._message("to be a string")
@@ -483,9 +490,13 @@ class ExpectTest(TestCase):
     def test_has_subdict(self):
         expect(dict()).to_have.subdict()
         expect(dict(foo='bar')).to.have.subdict()
+        expect({'foo': 'bar'}).to.have_subdict({'foo': 'bar'})
         expect(dict(foo='bar')).to_have.subdict(foo='bar')
         expect(dict(foo='bar')).not_to.have.subdict(bar='bar')
         expect(dict(foo='bar')).not_to.have.subdict(foo='bar', bar='foo')
+        
+        # lists in keys
+        expect(dict(foo=['bar'])).to.have_subdict(foo=['bar'])
         
         expect(lambda: expect(42).has_subdict())\
             .to_raise(AssertionError, r"Expect 42 to be a dictionary")
