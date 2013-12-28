@@ -388,6 +388,11 @@ class ExpectTest(TestCase):
         expect(expect.returning(False).to_be(False)).equals((True, ""))
         expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
+    def _test_should_hide_double_underscore_alternative_names_from_tracebacks(self):
+        pass
+    def _test_should_give_good_error_message_when_missing_argument_to_expect(self):
+        pass
+    
     # Matchers
     
     def test_is_trueish(self):
