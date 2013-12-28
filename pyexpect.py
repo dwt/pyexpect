@@ -209,7 +209,7 @@ class expect(object):
     false = is_false
     
     def is_equal(self, something):
-        self._assert(something == self._expected, "to be equal to {}", something)
+        self._assert(something == self._expected, "to be equal to {!r}", something)
     
     __eq__ = equals = equal = to_equal = is_equal
     
@@ -217,7 +217,7 @@ class expect(object):
         self.not_ == something
     
     def to_be(self, something):
-        self._assert(something is self._expected, "to be {}", something)
+        self._assert(something is self._expected, "to be {!r}", something)
     
     is_ = be = be_same = is_same = be_identical = is_identical = to_be
     
@@ -243,7 +243,7 @@ class expect(object):
             sequence = [sequence_or_atom]
             sequence.extend(additional_atoms)
         
-        self._assert(self._expected in sequence, "is included in {}", sequence)
+        self._assert(self._expected in sequence, "is included in {!r}", sequence)
     
     in_ = included_in = is_included_in
     
@@ -259,14 +259,14 @@ class expect(object):
         expected_items = [(key, self._expected.get(key)) for key in actual_keys]
         # superset = set(self._expected.iteritems())
         # REFACT: subset.issubset(superset)
-        self._assert(expected_items == actual_items, 'to contain dict {}', a_subdict)
+        self._assert(expected_items == actual_items, 'to contain dict {!r}', a_subdict)
     
     includes_dict = contains_dict = sub_dict = subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict
     
     def to_match(self, regex):
         assert isinstance(self._expected, basestring), self._message("to be a string")
         
-        self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r'{}'", regex)
+        self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{!r}", regex)
     
     match = matches = is_matching = to_match
     
@@ -313,33 +313,33 @@ class expect(object):
     len = length = count = has_count = has_length
     
     def is_greater(self, smaller):
-        self._assert(self._expected > smaller, "to be greater then {}", smaller)
+        self._assert(self._expected > smaller, "to be greater then {!r}", smaller)
     
     __gt__ = bigger = bigger_then = larger = larger_then = is_greater_then = is_greater
     
     def is_greater_or_equal(self, smaller_or_equal):
-        self._assert(self._expected >= smaller_or_equal, "to be greater or equal then {}", smaller_or_equal)
+        self._assert(self._expected >= smaller_or_equal, "to be greater or equal then {!r}", smaller_or_equal)
     
     __ge__ = greater_or_equal_then = is_greater_or_equal_then = greater_or_equal = is_greater_or_equal
     
     def is_less_then(self, greater):
-        self._assert(self._expected < greater, "to be less then {}", greater)
+        self._assert(self._expected < greater, "to be less then {!r}", greater)
     
     __lt__ = smaller = smaller_then = lesser = lesser_then = less_then = smaller_then = is_smaller_then = is_less_then
     
     def is_less_or_equal(self, greater_or_equal):
-        self._assert(self._expected <= greater_or_equal, "to be less or equal then {}", greater_or_equal)
+        self._assert(self._expected <= greater_or_equal, "to be less or equal then {!r}", greater_or_equal)
     
     __le__ = smaller_or_equal = smaller_or_equal_then = is_smaller_or_equal = is_smaller_or_equal_then = is_less_or_equal_then = is_less_or_equal
     
     # REFACT: consider adding is_within_exclusive_range
     def is_within_range(self, lower, higher):
-        self._assert(lower <= self._expected <= higher, "to be between {} and {}", lower, higher)
+        self._assert(lower <= self._expected <= higher, "to be between {!r} and {!r}", lower, higher)
     
     is_between = is_within = is_within_range
     
     def is_close(self, actual, delta):
-        self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {} with max delta {}", actual, delta)
+        self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {!r} with max delta {!r}", actual, delta)
     
     almost_equal = is_almost_equal = close_to = is_close_to = is_close
 
