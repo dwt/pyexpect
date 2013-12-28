@@ -305,7 +305,7 @@ class expect(object):
     def is_instance(self, a_class):
         self._assert(isinstance(self._expected, a_class), "to be instance of '{}'", a_class.__name__)
     
-    instanceof = instance_of = isinstance = is_instance
+    instanceof = is_instance_of = instance_of = isinstance = is_instance
     
     def has_length(self, a_length):
         self._assert(len(self._expected) == a_length, "to have length {}", a_length)
