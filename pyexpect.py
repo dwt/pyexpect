@@ -231,10 +231,11 @@ class expect(object):
     
     falsy = falsish = falseish = is_falseish
     
-    def does_include(self, something):
-        self._assert(something in self._expected, "to include {}", something)
+    def does_include(self, *needles):
+        for needle in needles:
+            self._assert(needle in self._expected, "to include {!r}", needle)
     
-    contain = contains = include = includes = does_include
+    contain = contains = to_include = include = includes = does_include
     
     def is_included_in(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
@@ -484,8 +485,10 @@ class ExpectTest(TestCase):
         expect([1,2,3,4]).include(3)
         expect([23,42]).not_to.contain(7)
         expect(dict(foo='bar')).includes('foo')
+        expect([1,2,3,4]).includes(2,3)
         
         expect(lambda: expect([1,2]).to.contain(3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
+        expect(lambda: expect([1,2]).to_include(2,3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
     
     def test_has_subdict(self):
         expect(dict()).to_have.subdict()
