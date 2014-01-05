@@ -60,6 +60,8 @@ class expect(object):
         self._expected_assertion_result = True
         self._selected_matcher = None
         self._selected_matcher_name = None
+        
+        self._enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives()
     
     @classmethod
     def with_message(cls, message, expected, should_raise=True):
@@ -89,6 +91,29 @@ class expect(object):
     
     ## Internals ########################################################################################
     
+    @classmethod
+    def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
+        """Works around the problem that special methods (as in '__something__') are not resolved
+        using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
+        
+        This method works on the class dict and is repeated after each instantiation
+        to support adding or overwriting existing matchers at any time.
+        """
+        def wrap(special_method_matcher_alias, matcher):
+            def wrapper(self, *args, **kwargs):
+                __tracebackhide__ = True  # Hide from py.test tracebacks
+                self._prepare_matcher_for_calling(special_method_matcher_alias, matcher)
+                return self(self, *args, **kwargs)
+            setattr(cls, special_method_matcher_alias, wrapper)
+        
+        # All public methods are matchers
+        public_matchers = [object.__getattribute__(cls, name) for name in dir(cls) if not name.startswith('_')]
+        special_method_names = [key for key in dir(cls) if key.startswith('__')]
+        for special_method_name in special_method_names:
+            prospective_matcher = object.__getattribute__(cls, special_method_name)
+            if prospective_matcher in public_matchers:
+                wrap(special_method_name, prospective_matcher)
+    
     def _is_negative(self):
         return self._expected_assertion_result is False
     
@@ -117,24 +142,27 @@ class expect(object):
         if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
             self._expected_assertion_result = False
         
+        return self._prepare_matcher_for_calling(name)
+    
+    def _prepare_matcher_for_calling(self, name, matcher=None):
         # If a matcher is availeable switch to it to allow calling it
+        # hasattr on __class__ to prevent recursion from __getattribute__
+        if matcher is None and hasattr(self.__class__, name):
+            matcher = object.__getattribute__(self, name)
+        
         self._selected_matcher_name = name
-        if hasattr(self.__class__, name):
-            self._selected_matcher = object.__getattribute__(self, name)
-        else:
-            self._selected_matcher = None
+        self._selected_matcher = matcher
         
         # Allow arbitrary chaining
         return self
-    
+        
     def __call__(self, *args, **kwargs):
         """Called whenever you actualy invoke a matcher. 
         
         Provides a good error message if you mistype the matcher name.
         
         Supports custom messages with the message keyword argument"""
-        # Integration with py.test - this hides the __call__ method from the generated traceback
-        __tracebackhide__ = True
+        __tracebackhide__ = True  # Hide from py.test tracebacks
         
         if self._selected_matcher is None:
             # REFACT: consider raising NotImplementedError
@@ -213,8 +241,10 @@ class expect(object):
     
     __eq__ = equals = equal = to_equal = is_equal
     
-    def __ne__(self, something):
+    def is_different(self, something):
         self.not_ == something
+    
+    __ne__ = is_different
     
     def to_be(self, something):
         self._assert(something is self._expected, "to be {!r}", something)
@@ -381,15 +411,30 @@ class ExpectTest(TestCase):
         expect(lambda: expect.with_message('fnord', True).to.be(False)) \
             .to_raise(AssertionError, r"^fnord$")
     
-    def test_should_allow_to_formulate_abstract_expectations(self):
+    def test_should_allow_to_formulate_non_raising_expectations(self):
         # Idea: have a good api to check expectations without raising
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
         expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
         expect(expect.returning(False).to_be(False)).equals((True, ""))
         expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
-    def _test_should_hide_double_underscore_alternative_names_from_tracebacks(self):
+    def test_should_hide_double_underscore_alternative_names_from_tracebacks(self):
+        assertion = None
+        try:
+            expect(3) != 3
+        except AssertionError as a:
+            assertion = a
+        
+        expect(assertion) != None
+        import sys, traceback
+        traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
+        expect(traceback).not_to.contain('_assert')
+        # Would like this one too, but is only hidden in py.test
+        # expect(traceback).not_to.contain('self(')
+    
+    def _test_should_allow_not_variety_of_every_matcher_directly(self):
         pass
+    
     def _test_should_give_good_error_message_when_missing_argument_to_expect(self):
         pass
     
