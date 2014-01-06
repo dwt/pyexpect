@@ -87,133 +87,6 @@ class expect(object):
         """
         return cls(expected, should_raise=False, message=message)
     
-    ## Internals ########################################################################################
-    
-    @classmethod
-    def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
-        """Works around the problem that special methods (as in '__something__') are not resolved
-        using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
-        
-        This method works on the class dict and is repeated after each instantiation
-        to support adding or overwriting existing matchers at any time.
-        """
-        def wrap(special_method_matcher_alias, matcher):
-            def wrapper(self, *args, **kwargs):
-                __tracebackhide__ = True  # Hide from py.test tracebacks
-                self._prepare_matcher_for_calling(special_method_matcher_alias, matcher)
-                return self(self, *args, **kwargs)
-            setattr(cls, special_method_matcher_alias, wrapper)
-        
-        # All public methods are matchers
-        public_matchers = [object.__getattribute__(cls, name) for name in dir(cls) if not name.startswith('_')]
-        special_method_names = [key for key in dir(cls) if key.startswith('__')]
-        for special_method_name in special_method_names:
-            prospective_matcher = object.__getattribute__(cls, special_method_name)
-            if prospective_matcher in public_matchers:
-                wrap(special_method_name, prospective_matcher)
-    
-    def _is_negative(self):
-        return self._expected_assertion_result is False
-    
-    def __getattribute__(self, name):
-        """Allows you to chain any python identifier to this object and keep 
-        chaining for as long as you want as syntactic sugar.
-        
-        Only the last identifier that is then actually called has to be an actual 
-        matcher.
-        
-        Including 'not' in any of the identifiers used in chaining will invert the 
-        whole expectation. This includes calling the negated form of a matcher by 
-        prefixing it with not_ like 'not_to_be' to get the inverted form of 'to_be'.
-        """
-        
-        # Allow normal access to everything that is not a matcher. 
-        # (Every public method is treated as a matcher)
-        # REFACT: I would prefer it if not every access to private methods would go through this method
-        # However as I do not want to return instance methods and other existing methods directly, there
-        # seems to be no way to do this.
-        if name.startswith('_'):
-            return object.__getattribute__(self, name)
-        
-        # If you include not somewhere in the called attributes name, 
-        # switch the expectation to negative.
-        if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
-            self._expected_assertion_result = False
-        
-        # hasattr on __class__ to prevent recursion from __getattribute__
-        matcher = None
-        if hasattr(self.__class__, name):
-            matcher = object.__getattribute__(self, name)
-        elif name.startswith('not_') and hasattr(self.__class__, name[4:]):
-            matcher = object.__getattribute__(self, name[4:])
-        self._prepare_matcher_for_calling(name, matcher)
-        
-        # Allow arbitrary chaining
-        return self
-    
-    def _prepare_matcher_for_calling(self, name, matcher):
-        self._selected_matcher_name = name
-        self._selected_matcher = matcher
-    
-    def __call__(self, *args, **kwargs):
-        """Called whenever you actualy invoke a matcher. 
-        
-        Provides a good error message if you mistype the matcher name.
-        
-        Supports custom messages with the message keyword argument"""
-        __tracebackhide__ = True  # Hide from py.test tracebacks
-        
-        if self._selected_matcher is None:
-            # REFACT: consider raising NotImplementedError
-            raise AssertionError("Tried to call non existing matcher '{}' (Patches welcome!)".format(self._selected_matcher_name))
-        
-        # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
-        # Hides the actual matcher and all the methods it calls to assert stuff.
-        try:
-            self._selected_matcher(*args, **kwargs)
-        except AssertionError as assertion:
-            if self._should_raise:
-                # hide internal expect() methods from backtrace
-                raise assertion
-            
-            # Support returning_expect
-            return (False, str(assertion))
-        
-        return (True, "")
-    
-    # REFACT: would be nice if the name of this method makes it clear how the 
-    # message should be worded to give a good error message
-    def _message(self, message_format, *message_positionals, **message_keywords):
-        expected = self._expected
-        optional_negation = ' not ' if self._expected_assertion_result is False else ' '
-        message = message_format.format(*message_positionals, **message_keywords)
-        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(
-            expected=expected,
-            optional_negation=optional_negation,
-            message=message,
-        )
-        
-        if self._custom_message is not None:
-            return self._custom_message.format(**locals())
-        
-        return assertion_message
-    
-    def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
-        assert assertion is self._expected_assertion_result, \
-            self._message(message_format, *message_positionals, **message_keywords)
-    
-    def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
-        if self._expected_assertion_result is False:
-            return
-        
-        self._assert(assertion, message_format, *message_positionals, **message_keywords)
-    
-    def _assert_if_negative(self, assertion, message_format, *message_positionals, **message_keywords):
-        if self._expected_assertion_result is True:
-            return
-        
-        self._assert(assertion, message_format, *message_positionals, **message_keywords)
-    
     ## Matchers #########################################################################################
     
     # On naming matchers: Their name should be clear and fit in with the naming scheme of the existing 
@@ -375,6 +248,138 @@ class expect(object):
         self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {!r} with max delta {!r}", actual, delta)
     
     almost_equal = is_almost_equal = close_to = is_close_to = is_close
+    
+    ## Internals ########################################################################################
+    
+    @classmethod
+    def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
+        """Works around the problem that special methods (as in '__something__') are not resolved
+        using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
+        
+        This method works on the class dict and is repeated after each instantiation
+        to support adding or overwriting existing matchers at any time.
+        """
+        def wrap(special_method_matcher_alias, matcher):
+            def wrapper(self, *args, **kwargs):
+                __tracebackhide__ = True  # Hide from py.test tracebacks
+                self._prepare_matcher_for_calling(special_method_matcher_alias, matcher)
+                return self(self, *args, **kwargs)
+            setattr(cls, special_method_matcher_alias, wrapper)
+        
+        # All public methods are matchers
+        public_matchers = [object.__getattribute__(cls, name) for name in dir(cls) if not name.startswith('_')]
+        special_method_names = [key for key in dir(cls) if key.startswith('__')]
+        for special_method_name in special_method_names:
+            prospective_matcher = object.__getattribute__(cls, special_method_name)
+            if prospective_matcher in public_matchers:
+                wrap(special_method_name, prospective_matcher)
+    
+    def _is_negative(self):
+        return self._expected_assertion_result is False
+    
+    def __getattribute__(self, name):
+        """Allows you to chain any python identifier to this object and keep 
+        chaining for as long as you want as syntactic sugar.
+        
+        Only the last identifier that is then actually called has to be an actual 
+        matcher.
+        
+        Including 'not' in any of the identifiers used in chaining will invert the 
+        whole expectation. This includes calling the negated form of a matcher by 
+        prefixing it with not_ like 'not_to_be' to get the inverted form of 'to_be'.
+        """
+        # Allow normal access to everything that is not a matcher. 
+        # (Every public method is treated as a matcher)
+        # REFACT: I would prefer it if not every access to private methods would go through this method
+        # However as I do not want to return instance methods and other existing methods directly, there
+        # seems to be no way to do this.
+        if name.startswith('_'):
+            return object.__getattribute__(self, name)
+        
+        # If you include not somewhere in the called attributes name, 
+        # switch the expectation to negative.
+        if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
+            self._expected_assertion_result = False
+        
+        # REFACT: consider to change matcher lookup to allow some more pre- and suffixes
+        # could be be_ to_ and some more to dry up the list of alternative names that have 
+        # to be written out for each matcher.
+        # hasattr on __class__ to prevent recursion from __getattribute__
+        matcher = None
+        if hasattr(self.__class__, name):
+            matcher = object.__getattribute__(self, name)
+        # Support 'not_' prefixed matcher lookup
+        elif name.startswith('not_') and hasattr(self.__class__, name[4:]):
+            matcher = object.__getattribute__(self, name[4:])
+        self._prepare_matcher_for_calling(name, matcher)
+        
+        # Allow arbitrary chaining
+        return self
+    
+    def _prepare_matcher_for_calling(self, name, matcher):
+        self._selected_matcher_name = name
+        self._selected_matcher = matcher
+    
+    def __call__(self, *args, **kwargs):
+        """Called whenever you actualy invoke a matcher. 
+        
+        Provides a good error message if you mistype the matcher name.
+        
+        Supports custom messages with the message keyword argument"""
+        __tracebackhide__ = True  # Hide from py.test tracebacks
+        
+        if self._selected_matcher is None:
+            # REFACT: consider raising NotImplementedError
+            raise AssertionError("Tried to call non existing matcher '{}' (Patches welcome!)".format(self._selected_matcher_name))
+        
+        # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
+        # Hides the actual matcher and all the methods it calls to assert stuff.
+        try:
+            self._selected_matcher(*args, **kwargs)
+        except AssertionError as assertion:
+            if self._should_raise:
+                # hide internal expect() methods from backtrace
+                raise assertion
+            
+            # Support returning_expect
+            return (False, str(assertion))
+        
+        return (True, "")
+    
+    # REFACT: would be nice if the name of this method makes it clear how the 
+    # message should be worded to give a good error message
+    def _message(self, message_format, *message_positionals, **message_keywords):
+        expected = self._expected
+        optional_negation = ' not ' if self._expected_assertion_result is False else ' '
+        message = message_format.format(*message_positionals, **message_keywords)
+        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(
+            expected=expected,
+            optional_negation=optional_negation,
+            message=message,
+        )
+        
+        if self._custom_message is not None:
+            return self._custom_message.format(**locals())
+        
+        return assertion_message
+    
+    def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
+        assert assertion is self._expected_assertion_result, \
+            self._message(message_format, *message_positionals, **message_keywords)
+    
+    def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
+        if self._expected_assertion_result is False:
+            return
+        
+        self._assert(assertion, message_format, *message_positionals, **message_keywords)
+    
+    def _assert_if_negative(self, assertion, message_format, *message_positionals, **message_keywords):
+        if self._expected_assertion_result is True:
+            return
+        
+        self._assert(assertion, message_format, *message_positionals, **message_keywords)
+    
+
 
 from unittest import TestCase, main
 class ExpectTest(TestCase):
