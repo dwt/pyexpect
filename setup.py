@@ -20,6 +20,7 @@ setup(
     author_email='spamfaenger@gmx.de',
     url='https://bitbucket.org/dwt/pyexpect',
     py_modules=['pyexpect'],
+    test_suite="pyexpect",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
