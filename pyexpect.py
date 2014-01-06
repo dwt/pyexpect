@@ -138,24 +138,24 @@ class expect(object):
         
         # If you include not somewhere in the called attributes name, 
         # switch the expectation to negative.
-        # REFACT: consider to support calling negated matchers directly with something like: expect(3).not_equals(2)
         if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
             self._expected_assertion_result = False
         
-        return self._prepare_matcher_for_calling(name)
-    
-    def _prepare_matcher_for_calling(self, name, matcher=None):
-        # If a matcher is availeable switch to it to allow calling it
         # hasattr on __class__ to prevent recursion from __getattribute__
-        if matcher is None and hasattr(self.__class__, name):
+        matcher = None
+        if hasattr(self.__class__, name):
             matcher = object.__getattribute__(self, name)
-        
-        self._selected_matcher_name = name
-        self._selected_matcher = matcher
+        elif name.startswith('not_') and hasattr(self.__class__, name[4:]):
+            matcher = object.__getattribute__(self, name[4:])
+        self._prepare_matcher_for_calling(name, matcher)
         
         # Allow arbitrary chaining
         return self
-        
+    
+    def _prepare_matcher_for_calling(self, name, matcher):
+        self._selected_matcher_name = name
+        self._selected_matcher = matcher
+    
     def __call__(self, *args, **kwargs):
         """Called whenever you actualy invoke a matcher. 
         
@@ -432,8 +432,15 @@ class ExpectTest(TestCase):
         # Would like this one too, but is only hidden in py.test
         # expect(traceback).not_to.contain('self(')
     
-    def _test_should_allow_not_variety_of_every_matcher_directly(self):
-        pass
+    def test_should_allow_not_variety_of_every_matcher_directly(self):
+        expect(3).to_be(3)
+        expect(3).not_to_be(2)
+        expect(lambda: expect(3).not_to_be(3)) \
+            .to_raise(AssertionError, r"^Expect 3 not to be 3$")
+        
+        expect(lambda: None).not_to_raise(AssertionError)
+        raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)
+        expect(raising).to_raise(AssertionError, "integer division or modulo by zero")
     
     def _test_should_give_good_error_message_when_missing_argument_to_expect(self):
         pass
