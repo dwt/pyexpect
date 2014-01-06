@@ -366,30 +366,30 @@ class expect(object):
         using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
         
         This method works on the class dict and is repeated after each instantiation
-        to support adding or overwriting existing matchers at any time.
+        to support adding or overwriting existing matchers at any time while not repeatedly doing the same.
         """
-        def wrap(special_method_matcher_alias, matcher):
+        # TODO: try if turning the special methods into descriptors allows to trigger
+        # self.__getattribute__() without increasing the stack trace length on failures
+        def wrap(special_method_name, public_name, matcher):
             def wrapper(self, *args, **kwargs):
-                # Does roughly the same as self.__getattribute__() would do.
-                # Sadly this means that it has be adapted on changes to it.
                 __tracebackhide__ = True  # Hide from py.test tracebacks
-                self._prepare_matcher_for_calling(special_method_matcher_alias, matcher)
-                return self(self, *args, **kwargs)
-            setattr(cls, special_method_matcher_alias, wrapper)
+                # Sadly this increases the traceback lenght by one entry :/
+                self.__getattribute__(public_name)(*args, **kwargs)
+            setattr(cls, special_method_name, wrapper)
         
-        public_matchers = []
-        special_method_names = []
+        special_names = filter(lambda name: name.startswith('__') and name.endswith('__'), dir(cls))
+        public_matchers_by_matcher = dict()
         for name in dir(cls):
-            if name.startswith('__') and name.endswith('__'):
-                special_method_names.append(name)
             # Assumes that all public methods are matchers
             if not name.startswith('_'):
-                public_matchers.append(object.__getattribute__(cls, name))
+                matcher = object.__getattribute__(cls, name)
+                public_matchers_by_matcher[matcher] = name
         
-        for special_method_name in special_method_names:
-            prospective_matcher = object.__getattribute__(cls, special_method_name)
-            if prospective_matcher in public_matchers:
-                wrap(special_method_name, prospective_matcher)
+        for special_name in special_names:
+            matcher = object.__getattribute__(cls, special_name)
+            if matcher in public_matchers_by_matcher.keys():
+                public_name = public_matchers_by_matcher[matcher]
+                wrap(special_name, public_name, matcher)
     
 
 ## Unit Tests ###########################################################################################
