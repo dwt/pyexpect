@@ -96,7 +96,7 @@ class expect(object):
     
     # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
-    # `hf_unhide` is ofthen the keyword here.
+    # `hf_unhide` is often the keyword here.
     
     def is_true(self):
         self._assert(self._expected is True, "to be True")
@@ -251,32 +251,6 @@ class expect(object):
     
     ## Internals ########################################################################################
     
-    @classmethod
-    def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
-        """Works around the problem that special methods (as in '__something__') are not resolved
-        using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
-        
-        This method works on the class dict and is repeated after each instantiation
-        to support adding or overwriting existing matchers at any time.
-        """
-        def wrap(special_method_matcher_alias, matcher):
-            def wrapper(self, *args, **kwargs):
-                __tracebackhide__ = True  # Hide from py.test tracebacks
-                self._prepare_matcher_for_calling(special_method_matcher_alias, matcher)
-                return self(self, *args, **kwargs)
-            setattr(cls, special_method_matcher_alias, wrapper)
-        
-        # All public methods are matchers
-        public_matchers = [object.__getattribute__(cls, name) for name in dir(cls) if not name.startswith('_')]
-        special_method_names = [key for key in dir(cls) if key.startswith('__')]
-        for special_method_name in special_method_names:
-            prospective_matcher = object.__getattribute__(cls, special_method_name)
-            if prospective_matcher in public_matchers:
-                wrap(special_method_name, prospective_matcher)
-    
-    def _is_negative(self):
-        return self._expected_assertion_result is False
-    
     def __getattribute__(self, name):
         """Allows you to chain any python identifier to this object and keep 
         chaining for as long as you want as syntactic sugar.
@@ -301,21 +275,25 @@ class expect(object):
         if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
             self._expected_assertion_result = False
         
-        # REFACT: consider to change matcher lookup to allow some more pre- and suffixes
-        # could be be_ to_ and some more to dry up the list of alternative names that have 
-        # to be written out for each matcher.
-        # hasattr on __class__ to prevent recursion from __getattribute__
-        matcher = None
-        if hasattr(self.__class__, name):
-            matcher = object.__getattribute__(self, name)
-        # Support 'not_' prefixed matcher lookup
-        elif name.startswith('not_') and hasattr(self.__class__, name[4:]):
-            matcher = object.__getattribute__(self, name[4:])
+        matcher = self._matcher_with_name(name)
         self._prepare_matcher_for_calling(name, matcher)
         
         # Allow arbitrary chaining
         return self
     
+    def _matcher_with_name(self, name):
+        # REFACT: consider to change matcher lookup to allow some more pre- and suffixes
+        # could be be_ to_ and some more to dry up the list of alternative names that have 
+        # to be written out for each matcher.
+        if name.startswith('not_'):
+            name = name[4:]
+        
+        # hasattr on __class__ to prevent recursion from __getattribute__
+        if not hasattr(self.__class__, name):
+            return None
+        
+        return object.__getattribute__(self, name)
+        
     def _prepare_matcher_for_calling(self, name, matcher):
         self._selected_matcher_name = name
         self._selected_matcher = matcher
@@ -346,11 +324,27 @@ class expect(object):
         
         return (True, "")
     
+    def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
+        assert assertion is self._expected_assertion_result, \
+            self._message(message_format, *message_positionals, **message_keywords)
+    
+    def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
+        if self._is_negative():
+            return
+        
+        self._assert(assertion, message_format, *message_positionals, **message_keywords)
+    
+    def _assert_if_negative(self, assertion, message_format, *message_positionals, **message_keywords):
+        if not self._is_negative():
+            return
+        
+        self._assert(assertion, message_format, *message_positionals, **message_keywords)
+    
     # REFACT: would be nice if the name of this method makes it clear how the 
     # message should be worded to give a good error message
     def _message(self, message_format, *message_positionals, **message_keywords):
         expected = self._expected
-        optional_negation = ' not ' if self._expected_assertion_result is False else ' '
+        optional_negation = ' not ' if self._is_negative() else ' '
         message = message_format.format(*message_positionals, **message_keywords)
         assertion_message = "Expect {expected!r}{optional_negation}{message}".format(
             expected=expected,
@@ -363,23 +357,42 @@ class expect(object):
         
         return assertion_message
     
-    def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
-        assert assertion is self._expected_assertion_result, \
-            self._message(message_format, *message_positionals, **message_keywords)
+    def _is_negative(self):
+        return self._expected_assertion_result is False
     
-    def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
-        if self._expected_assertion_result is False:
-            return
+    @classmethod
+    def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
+        """Works around the problem that special methods (as in '__something__') are not resolved
+        using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
         
-        self._assert(assertion, message_format, *message_positionals, **message_keywords)
-    
-    def _assert_if_negative(self, assertion, message_format, *message_positionals, **message_keywords):
-        if self._expected_assertion_result is True:
-            return
+        This method works on the class dict and is repeated after each instantiation
+        to support adding or overwriting existing matchers at any time.
+        """
+        def wrap(special_method_matcher_alias, matcher):
+            def wrapper(self, *args, **kwargs):
+                # Does roughly the same as self.__getattribute__() would do.
+                # Sadly this means that it has be adapted on changes to it.
+                __tracebackhide__ = True  # Hide from py.test tracebacks
+                self._prepare_matcher_for_calling(special_method_matcher_alias, matcher)
+                return self(self, *args, **kwargs)
+            setattr(cls, special_method_matcher_alias, wrapper)
         
-        self._assert(assertion, message_format, *message_positionals, **message_keywords)
+        public_matchers = []
+        special_method_names = []
+        for name in dir(cls):
+            if name.startswith('__') and name.endswith('__'):
+                special_method_names.append(name)
+            # Assumes that all public methods are matchers
+            if not name.startswith('_'):
+                public_matchers.append(object.__getattribute__(cls, name))
+        
+        for special_method_name in special_method_names:
+            prospective_matcher = object.__getattribute__(cls, special_method_name)
+            if prospective_matcher in public_matchers:
+                wrap(special_method_name, prospective_matcher)
     
 
+## Unit Tests ###########################################################################################
 
 from unittest import TestCase, main
 class ExpectTest(TestCase):
