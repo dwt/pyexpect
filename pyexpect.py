@@ -38,9 +38,7 @@ class expect(object):
     For more options and a list of the matchers, see the source. :)
     """
     
-    # TODO: Consider to add with statement support
-    # with expect.raises(KeyError, 'fnord'):
-    #     something_that_raises()
+    # REFACT: consider moving private methods down so reading the source allows immediate access to the matchers
     
     def __init__(self, expected, should_raise=True, message=None):
         """Initialize a useable assertion object that you can chain off of.
@@ -301,6 +299,9 @@ class expect(object):
     
     match = matches = is_matching = to_match
     
+    # TODO: consider with statement support to allow code like this
+    # with expect.raises(AssertionError):
+    #   something.that_might_raise()
     def to_raise(self, exception_class=Exception, message_regex=None):
         """Be carefull with negative raise assertions as they swallow all exceptions that you 
         don't specify. If you say `expect(raiser).not_.to_raise(FooException, 'fnord')` this 
@@ -363,7 +364,8 @@ class expect(object):
     
     __le__ = smaller_or_equal = smaller_or_equal_then = is_smaller_or_equal = is_smaller_or_equal_then = is_less_or_equal_then = is_less_or_equal
     
-    # REFACT: consider adding is_within_exclusive_range
+    # TODO: consider adding is_within_exclusive_range
+    # TODO: consider supporting slice syntax as alias. expect(3)[2:4] doesn't look natural though
     def is_within_range(self, lower, higher):
         self._assert(lower <= self._expected <= higher, "to be between {!r} and {!r}", lower, higher)
     
