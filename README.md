@@ -83,6 +83,30 @@ anywhere in your code to formalize expectations that your code has about some in
     
     Done!
 
+1.  Native `not` support: If you define a matcher, you don't have to define the inverse of it too or do anything special to get it. That means that for every matchers like `equals`, you automatically get the inverse of that, i.e. `not_equals`. This inverse can be invoked in a number of ways: 
+    
+    a.  You can just prefix the matcher with `not_` like this
+    
+        expect(foo).not_equals(bar)
+        expect(some_function).not_to_raise()
+    
+    a. You can include `not` as part of the path before the matcher like this:
+    
+        expect(foo).not_.to_equal(bar)
+        expect(foo).not_to.equal(bar)
+        expect(foo).to_not.equal(bar)
+        expect(foo).to_not_be.equal(bar)
+        # or go all out - but just because it works doesn't mean it's sensible
+        expect(foo).is.just_a_little.not_quite_the_same_as_it.equals(bar)
+    
+    That is you can include the word `not` at the beginning, middle or end of an identifier - just ensure to separate it from the identifier by snakecase.
+    
+    This works for all aliasses of each matcher, so no additional work there.
+    
+    For more examples, have a look at the testsuite for the matchers.
+    
+    If you want to add your own matchers, sometimes the inverse doesn't work automatically if you implement your expectations with multiple checks in a row. In that case the inverse matcher might assert the wrong thing, because the order of the checks doesn't make sense in the inverted case. Should that happen, take a look at  `expect._assert_if_positive()`, `expect._assert_if_negative()` and `expect._is_negative()` should you need them. Be advised however that good matchers should need this only very rarely.
+
 1.  Great error messages: pyexpect takes great care to ensure every aspect of experiencing an error is as concise and usefull as possible. All error messages have the same format that always starts with what is expected and then is customized by the matcher to pack as much information as possible.
     
         expect(23).not_.equals(23)

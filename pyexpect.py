@@ -125,7 +125,8 @@ class expect(object):
         matcher.
         
         Including 'not' in any of the identifiers used in chaining will invert the 
-        whole expectation.
+        whole expectation. This includes calling the negated form of a matcher by 
+        prefixing it with not_ like 'not_to_be' to get the inverted form of 'to_be'.
         """
         
         # Allow normal access to everything that is not a matcher. 
