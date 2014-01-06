@@ -49,7 +49,18 @@ As a bonus they are not coupled to any TestCase class so you can easily reuse th
 
 Glad you ask! Here you go
 
-1.  Lots of included matchers. Take a look at the source to see all the assertions you need to get started. From `is_equal` over `to_be` and `to_raise` till `to_match` - we've got you covered. And not only that, but each matcher has some aliasses so you can use the variant that reads the best in your assertion. (If someting important is missing, pull requests are welcome.)
+1.  Lots of included matchers: Take a look at the source to see all the assertions you need to get started. From `is_equal` over `to_be` and `to_raise` till `to_match` - we've got you covered. And not only that, but each matcher has some aliasses so you can use the variant that reads the best in your assertion.
+    
+    Some examples:
+    
+        expect(True).is_.true()
+        expect(True).is_true()
+        expect(True).is_equal(True)
+        expect(True) == True
+        expect(raising_calable).raises()
+        expect(raising_calable).to_raise()
+    
+    Should an important alias be missing, pull requests are welcome.
 
 1.  Ease of use: `expect()` can be arbitrary chained with whatever you can think of (provided it's a valid python identifier) to give you the cleanest description of your assertion possible:
     
@@ -59,16 +70,7 @@ Glad you ask! Here you go
         expect(23).to_be_chaned.with_something.that_makes_sense_in\
             .your_context.before_it.calls_the.matcher.equals(23)
     
-    Matchers also have many aliasses defined to enable you to write the expectations in a natural way:
-    
-        expect(True).is_.true()
-        expect(True).is_true()
-        expect(True).is_equal(True)
-        expect(True) == True
-        expect(raising_calable).raises()
-        expect(raising_calable).to_raise()
-    
-    Choose whatever makes sense for your specific test to read well so that reading the test later feels natural and transports the meaning of the code as best as possible. Should an important alias be missing, pull requests are welcome.
+    Choose whatever makes sense for your specific test to read well so that reading the test later feels natural and transports the meaning of the code as best as possible.
 
 1.  Simplicity of extension: All the other python packages I've looked at each matcher is a class or something that needs to be registered via a more or less complicated process, arguments are not just straightforward method arguments, `not` is not supported as a native framework concept...
     
@@ -80,6 +82,8 @@ Glad you ask! Here you go
         expect.is_falseish = is_falseish
     
     Done!
+    
+    Also note how the matcher clearly communicates what is important: what it asserts, and what error message it generates. No fluff included! (tm)
 
 1.  Native `not` support: If you define a matcher, you don't have to define the inverse of it too or do anything special to get it. That means that for every matchers like `equals`, you automatically get the inverse of that, i.e. `not_equals`. This inverse can be invoked in a number of ways: 
     
@@ -112,7 +116,7 @@ Glad you ask! Here you go
     
     If you write your own assertion methods to enhance your unit testing, it's quite easy to get long stack traces because the actuall assertion happens some stack frames down in one of the called matchers.
     
-    Consider assertions like this: (a little fabricated, but you get the idea)
+    Consider assertions like this (a little fabricated, ok. But I'm sure you've seen this happen in your projects):
     
         from unittest import TestCase, main
         class Test(TestCase):
@@ -200,3 +204,5 @@ Glad you ask! Here you go
     And should you need it, you can override the error messages generated without needing to change the matchers. See `expect.with_message()` for details.
 
 1.  Test coverage: Of course pyexpect has full test coverage ensuring that it does exactly what you expect it to do.
+
+1.  Think something is could be better in this documentation? Pull requests welcome. :)
