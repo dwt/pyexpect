@@ -3,11 +3,19 @@
 
 from setuptools import setup
 
+def readme():
+    from subprocess import check_output, CalledProcessError
+    try:
+        return check_output(['pandoc', '--from', 'markdown', '--to', 'rst', 'README.md'])
+    except (OSError, CalledProcessError) as error:
+        raise AssertionError('pandoc is required to build this, see http://johnmacfarlane.net/pandoc/')
+
 setup(
     name='pyexpect',
     version='1.0.2',
     description='Python expectaton library',
-    long_description=file('README.md').read(),
+    # REFACT: convert the readme with 'pandoc --from markdown --to rst README.md' directly on reading
+    long_description=readme(),
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
     url='https://bitbucket.org/dwt/pyexpect',
