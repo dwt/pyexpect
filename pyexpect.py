@@ -98,6 +98,10 @@ class expect(object):
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
     # `hf_unhide` is often the keyword here.
     
+    # REFACT: on the one hand the aliasses are really nice to to use, on the other hand they create ambiguity
+    # because not all names are completely coherent. Maybe it is better to abandon them and just allow 'not_' 
+    # prefixes and do the rest via arbitrary chaining?
+    
     def is_true(self):
         self._assert(self._expected is True, "to be True")
     
@@ -316,7 +320,6 @@ class expect(object):
             self._selected_matcher(*args, **kwargs)
         except AssertionError as assertion:
             if self._should_raise:
-                # hide internal expect() methods from backtrace
                 raise assertion
             
             # Support returning_expect
