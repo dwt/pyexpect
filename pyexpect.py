@@ -370,7 +370,7 @@ class expect(object):
         """
         # TODO: try if turning the special methods into descriptors allows to trigger
         # self.__getattribute__() without increasing the stack trace length on failures
-        def wrap(special_method_name, public_name, matcher):
+        def wrap(special_method_name, public_name):
             def wrapper(self, *args, **kwargs):
                 __tracebackhide__ = True  # Hide from py.test tracebacks
                 # Sadly this increases the traceback lenght by one entry :/
@@ -389,7 +389,7 @@ class expect(object):
             matcher = object.__getattribute__(cls, special_name)
             if matcher in public_matchers_by_matcher.keys():
                 public_name = public_matchers_by_matcher[matcher]
-                wrap(special_name, public_name, matcher)
+                wrap(special_name, public_name)
     
 
 ## Unit Tests ###########################################################################################
