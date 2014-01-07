@@ -112,6 +112,8 @@ class expect(object):
     
     false = is_false
     
+    # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
+    # Could enhance readability, not sure it's a good idea?
     def is_equal(self, something):
         self._assert(something == self._expected, "to be equal to {!r}", something)
     
@@ -549,6 +551,8 @@ class ExpectTest(TestCase):
         expect(lambda: expect(1).not_to.be(1)) \
             .to_raise(AssertionError, r"Expect 1 not to be 1")
     
+    def _test_does_exist(self):
+        pass # Not quite sure it's needed. Aliasses: exists, is_not_none(?)
     def test_is_included_in(self):
         expect(1).is_included_in(1,2,3)
         expect(1).is_included_in([1,2,3])
