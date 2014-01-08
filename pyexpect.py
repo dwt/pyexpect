@@ -38,8 +38,6 @@ class expect(object):
     For more options and a list of the matchers, see the source. :)
     """
     
-    # REFACT: consider moving private methods down so reading the source allows immediate access to the matchers
-    
     def __init__(self, expected, should_raise=True, message=None):
         """Initialize a useable assertion object that you can chain off of.
         
@@ -89,6 +87,9 @@ class expect(object):
     
     ## Matchers #########################################################################################
     
+    # All public methods on this class are expected to be matchers.
+    # Beware the consequences if you break this promise. :)
+    
     # On naming matchers: Their name should be clear and fit in with the naming scheme of the existing 
     # matchers. That is: short, active, prepended with a conjugation of be
     # Sensible alternative names are encouraged after the method definition to allow the matchers
@@ -115,7 +116,7 @@ class expect(object):
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
     def is_equal(self, something):
-        self._assert(something == self._expected, "to be equal to {!r}", something)
+        self._assert(something == self._expected, "to be equal to {0!r}", something)
     
     __eq__ = equals = equal = to_equal = is_equal
     
@@ -125,7 +126,7 @@ class expect(object):
     __ne__ = is_different
     
     def to_be(self, something):
-        self._assert(something is self._expected, "to be {!r}", something)
+        self._assert(something is self._expected, "to be {0!r}", something)
     
     is_ = be = be_same = is_same = be_identical = is_identical = to_be
     
@@ -141,7 +142,7 @@ class expect(object):
     
     def does_include(self, *needles):
         for needle in needles:
-            self._assert(needle in self._expected, "to include {!r}", needle)
+            self._assert(needle in self._expected, "to include {0!r}", needle)
     
     contain = contains = to_include = include = includes = does_include
     
@@ -151,7 +152,7 @@ class expect(object):
             sequence = [sequence_or_atom]
             sequence.extend(additional_atoms)
         
-        self._assert(self._expected in sequence, "is included in {!r}", sequence)
+        self._assert(self._expected in sequence, "is included in {0!r}", sequence)
     
     in_ = included_in = is_included_in
     
@@ -167,14 +168,14 @@ class expect(object):
         expected_items = [(key, self._expected.get(key)) for key in actual_keys]
         # superset = set(self._expected.iteritems())
         # REFACT: subset.issubset(superset)
-        self._assert(expected_items == actual_items, 'to contain dict {!r}', a_subdict)
+        self._assert(expected_items == actual_items, 'to contain dict {0!r}', a_subdict)
     
     includes_dict = contains_dict = sub_dict = subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict
     
     def to_match(self, regex):
         assert isinstance(self._expected, basestring), self._message("to be a string")
         
-        self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{!r}", regex)
+        self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{0!r}", regex)
     
     match = matches = is_matching = to_match
     
@@ -189,7 +190,7 @@ class expect(object):
         """
         # REFACT: consider to change to_raise to let all unexpected exceptions pass through
         # Not sure what that means to correctly implement the negative side though
-        assert callable(self._expected), "Expect {!r} to be callable".format(self._expected)
+        assert callable(self._expected), "Expect {0!r} to be callable".format(self._expected)
         
         # import sys; sys.stdout = sys.__stdout__; from bpdb import set_trace; set_trace()
         caught_exception = None
@@ -199,11 +200,11 @@ class expect(object):
         is_right_class = isinstance(caught_exception, exception_class)
         if message_regex is None:
             self._assert(is_right_class, 
-                "to raise {} but it raised:\n\t{!r}", exception_class.__name__, caught_exception)
+                "to raise {0} but it raised:\n\t{1!r}", exception_class.__name__, caught_exception)
         else:
             has_matching_message = re.search(message_regex, str(caught_exception)) is not None
             self._assert(is_right_class and has_matching_message, 
-                "to raise {} with message matching:\n\tr'{}'\nbut it raised:\n\t{!r}", 
+                "to raise {0} with message matching:\n\tr'{1}'\nbut it raised:\n\t{2!r}", 
                 exception_class.__name__, message_regex, caught_exception)
     
     throws = is_throwing = raise_ = raises = is_raising = to_raise
@@ -214,46 +215,46 @@ class expect(object):
     empty = is_empty
     
     def is_instance(self, a_class):
-        self._assert(isinstance(self._expected, a_class), "to be instance of '{}'", a_class.__name__)
+        self._assert(isinstance(self._expected, a_class), "to be instance of '{0}'", a_class.__name__)
     
     instanceof = is_instance_of = instance_of = isinstance = is_instance
     
     def has_length(self, a_length):
-        self._assert(len(self._expected) == a_length, "to have length {}", a_length)
+        self._assert(len(self._expected) == a_length, "to have length {0}", a_length)
     
     len = length = count = has_count = has_length
     
     def is_greater(self, smaller):
-        self._assert(self._expected > smaller, "to be greater then {!r}", smaller)
+        self._assert(self._expected > smaller, "to be greater then {0!r}", smaller)
     
     __gt__ = bigger = bigger_then = larger = larger_then = is_greater_then = is_greater
     
     def is_greater_or_equal(self, smaller_or_equal):
-        self._assert(self._expected >= smaller_or_equal, "to be greater or equal then {!r}", smaller_or_equal)
+        self._assert(self._expected >= smaller_or_equal, "to be greater or equal then {0!r}", smaller_or_equal)
     
     __ge__ = greater_or_equal_then = is_greater_or_equal_then = greater_or_equal = is_greater_or_equal
     
     def is_less_then(self, greater):
-        self._assert(self._expected < greater, "to be less then {!r}", greater)
+        self._assert(self._expected < greater, "to be less then {0!r}", greater)
     
     __lt__ = smaller = smaller_then = lesser = lesser_then = less_then = smaller_then = is_smaller_then = is_less_then
     
     def is_less_or_equal(self, greater_or_equal):
-        self._assert(self._expected <= greater_or_equal, "to be less or equal then {!r}", greater_or_equal)
+        self._assert(self._expected <= greater_or_equal, "to be less or equal then {0!r}", greater_or_equal)
     
     __le__ = smaller_or_equal = smaller_or_equal_then = is_smaller_or_equal = is_smaller_or_equal_then = is_less_or_equal_then = is_less_or_equal
     
     # TODO: consider adding is_within_exclusive_range
     # TODO: consider supporting slice syntax as alias. expect(3)[2:4] doesn't look natural though
     def is_within_range(self, lower, higher):
-        self._assert(lower <= self._expected <= higher, "to be between {!r} and {!r}", lower, higher)
+        self._assert(lower <= self._expected <= higher, "to be between {0!r} and {1!r}", lower, higher)
     
     is_between = is_within = is_within_range
     
     def is_close(self, actual, delta):
-        self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {!r} with max delta {!r}", actual, delta)
+        self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {0!r} with max delta {1!r}", actual, delta)
     
-    almost_equal = is_almost_equal = close_to = is_close_to = is_close
+    is_about = about = almost_equal = is_almost_equal = close_to = is_close_to = is_close
     
     ## Internals ########################################################################################
     
@@ -314,7 +315,7 @@ class expect(object):
         
         if self._selected_matcher is None:
             # REFACT: consider raising NotImplementedError
-            raise AssertionError("Tried to call non existing matcher '{}' (Patches welcome!)".format(self._selected_matcher_name))
+            raise AssertionError("Tried to call non existing matcher '{0}' (Patches welcome!)".format(self._selected_matcher_name))
         
         # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
         # Hides the actual matcher and all the methods it calls to assert stuff.
@@ -436,6 +437,8 @@ class ExpectTest(TestCase):
         
         expect(lambda: expect.with_message('fnord', True).to.be(False)) \
             .to_raise(AssertionError, r"^fnord$")
+        
+        # TODO: allow partially formatted messages from expect.with_message
     
     def test_should_allow_to_formulate_non_raising_expectations(self):
         # Idea: have a good api to check expectations without raising
