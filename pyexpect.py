@@ -94,6 +94,8 @@ class expect(object):
     # matchers. That is: short, active, prepended with a conjugation of be
     # Sensible alternative names are encouraged after the method definition to allow the matchers
     # To be used sensibly in a sentence like matter for those who want it
+    # REFACT: consider switching to the short form as the default and prefer to get the combinations from the 
+    # arbitrary chaining support?
     
     # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
