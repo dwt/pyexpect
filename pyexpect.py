@@ -397,10 +397,11 @@ class expect(object):
             if not name.startswith('_'):
                 matcher = object.__getattribute__(cls, name)
                 public_matchers_by_matcher[matcher] = name
+        public_matchers = list(public_matchers_by_matcher.keys())
         
         for special_name in special_names:
             matcher = object.__getattribute__(cls, special_name)
-            if matcher in public_matchers_by_matcher.keys():
+            if matcher in public_matchers:
                 public_name = public_matchers_by_matcher[matcher]
                 wrap(special_name, public_name)
     
@@ -476,7 +477,7 @@ class ExpectTest(TestCase):
         
         expect(lambda: None).not_to_raise(AssertionError)
         raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)
-        expect(raising).to_raise(AssertionError, "integer division or modulo by zero")
+        expect(raising).to_raise(AssertionError, "division.* by zero")
     
     def _test_should_give_good_error_message_when_missing_argument_to_expect(self):
         pass
@@ -542,7 +543,7 @@ class ExpectTest(TestCase):
         expect(10) == 10
         expect(10) != 12
         
-        expect(lambda: expect([]) == set()).to_raise(AssertionError, r"Expect \[\] to be equal to set\(\[\]\)")
+        expect(lambda: expect([]) == set()).to_raise(AssertionError, r"Expect \[\] to be equal to set")
         expect(lambda: expect(1) != 1).to_raise(AssertionError, r"Expect 1 not to be equal to 1")
         expect(lambda: expect(23).to.equal(42)) \
             .to_raise(AssertionError, r"Expect 23 to be equal to 42")
