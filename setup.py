@@ -2,26 +2,16 @@
 # encoding: utf8
 
 from setuptools import setup
-from subprocess import CalledProcessError
-try:
-    from subprocess import check_output
-except ImportError:
-    # Effin py26 compatibility...
-    def check_output(*popenargs, **kwargs):
-        from subprocess import Popen, PIPE
-        process = Popen(stdout=PIPE, *popenargs, **kwargs)
-        output, unused_err = process.communicate()
-        retcode = process.poll()
-        if retcode:
-            raise CalledProcessError(retcode, popenargs[0])
-        return output
-
 
 def readme():
+    from subprocess import CalledProcessError
     try:
+        from subprocess import check_output
         return check_output(['pandoc', '--from', 'markdown', '--to', 'rst', 'README.md'])
-    except (OSError, CalledProcessError) as error:
-        raise AssertionError('pandoc is required to build this, see http://johnmacfarlane.net/pandoc/')
+    except (ImportError, OSError, CalledProcessError) as error:
+        print('python2.6 and pandoc is required to get the description as rst - using the original markdown instead.',
+              'See http://johnmacfarlane.net/pandoc/')
+    return file('README.md').read()
 
 setup(
     name='pyexpect',
