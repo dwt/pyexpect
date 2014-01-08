@@ -17,7 +17,6 @@ setup(
     name='pyexpect',
     version='1.0.5',
     description='Python expectaton library',
-    # REFACT: convert the readme with 'pandoc --from markdown --to rst README.md' directly on reading
     long_description=readme(),
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
