@@ -2,9 +2,22 @@
 # encoding: utf8
 
 from setuptools import setup
+from subprocess import CalledProcessError
+try:
+    from subprocess import check_output
+except ImportError:
+    # Effin py26 compatibility...
+    def check_output(*popenargs, **kwargs):
+        from subprocess import Popen, PIPE
+        process = Popen(stdout=PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            raise CalledProcessError(retcode, popenargs[0])
+        return output
+
 
 def readme():
-    from subprocess import check_output, CalledProcessError
     try:
         return check_output(['pandoc', '--from', 'markdown', '--to', 'rst', 'README.md'])
     except (OSError, CalledProcessError) as error:
