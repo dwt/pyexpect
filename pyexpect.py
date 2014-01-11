@@ -203,7 +203,9 @@ class expect(object):
     have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
     def to_match(self, regex):
-        assert isinstance(self._expected, basestring), self._message("to be a string")
+        import sys
+        string_type = str if sys.version > '3' else basestring
+        assert isinstance(self._expected, string_type), self._message("to be a string")
         
         self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{0!r}", regex)
     
