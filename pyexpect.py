@@ -275,12 +275,13 @@ class expect(object):
     is_smaller_or_equal = is_smaller_or_equal_than = is_less_or_equal_than = is_less_or_equal = less_or_equal
     # TODO: consider to include *_then because it's such a common error?
     
-    # TODO: consider adding is_within_exclusive_range
+    # TODO: consider adding is_between_exclusive
     # TODO: consider supporting slice syntax as alias. expect(3)[2:4] doesn't look natural though
-    def within_range(self, lower, higher):
+    def between(self, lower, higher):
         self._assert(lower <= self._expected <= higher, "to be between {0!r} and {1!r}", lower, higher)
     
-    is_between = is_within_range = within_range
+    within_range = between
+    is_between = is_within_range = is_between = between
     
     def close_to(self, actual, max_delta):
         self._assert((actual - max_delta) <= self._expected <= (actual + max_delta), "to be close to {0!r} with max delta {1!r}", actual, max_delta)
@@ -753,9 +754,9 @@ class ExpectTest(TestCase):
         expect(10) <= 10
         expect(lambda: expect(10) <= 5).raises(AssertionError, "Expect 10 to be less or equal than 5")
     
-    def test_is_within_range(self):
-        expect(3).is_within_range(1,10)
-        expect(lambda: expect(10).is_within_range(1,3)).to_raise(AssertionError, "Expect 10 to be between 1 and 3")
+    def test_is_between(self):
+        expect(3).is_between(1,10)
+        expect(lambda: expect(10).is_between(1,3)).to_raise(AssertionError, "Expect 10 to be between 1 and 3")
     
 
     def test_is_close_to(self):
