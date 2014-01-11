@@ -14,6 +14,7 @@
 # - get build server + button on bitbucket
 # - get coverage + button on bitbucket
 # - get documentation + button on bitbucket
+# Improve py3 support - shorten exception stack traces
 
 __all__ = ['expect']
 
@@ -135,7 +136,7 @@ class expect(object):
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
     def equal(self, something):
-        self._assert(something == self._expected, "to be equal to {0!r}", something)
+        self._assert(something == self._expected, "to equal {0!r}", something)
     
     __eq__ = equals = equal
     to_equal = is_equal = equal
@@ -578,12 +579,12 @@ class ExpectTest(TestCase):
         expect(10) == 10
         expect(10) != 12
         
-        expect(lambda: expect([]) == set()).to_raise(AssertionError, r"Expect \[\] to be equal to set")
-        expect(lambda: expect(1) != 1).to_raise(AssertionError, r"Expect 1 not to be equal to 1")
+        expect(lambda: expect([]) == set()).to_raise(AssertionError, r"Expect \[\] to equal set")
+        expect(lambda: expect(1) != 1).to_raise(AssertionError, r"Expect 1 not to equal 1")
         expect(lambda: expect(23).to.equal(42)) \
-            .to_raise(AssertionError, r"Expect 23 to be equal to 42")
+            .to_raise(AssertionError, r"Expect 23 to equal 42")
         expect(lambda: expect(23).not_to.equal(23)) \
-            .to_raise(AssertionError, r"Expect 23 not to be equal to 23")
+            .to_raise(AssertionError, r"Expect 23 not to equal 23")
     
     def test_is_identical(self):
         expect(True).is_identical(True)
