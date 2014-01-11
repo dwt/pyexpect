@@ -4,6 +4,7 @@
 from setuptools import setup
 
 def readme():
+    "Falls back to just file().read() on any error, because the conversion to rst is only really relevant when uploading the package to pypi"
     from subprocess import CalledProcessError
     try:
         from subprocess import check_output
