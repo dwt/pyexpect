@@ -132,6 +132,9 @@ class expect(object):
     
     is_none = none
     
+    def exist(self):
+        self._assert(self._expected is not None, "to exist (not be None)")
+    exists = exist
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
     def equal(self, something):
@@ -190,7 +193,7 @@ class expect(object):
         a_subdict.update(kwargs)
         
         actual_keys = a_subdict.keys()
-        actual_items = a_subdict.items()
+        actual_items = list(a_subdict.items())
         expected_items = [(key, self._expected.get(key)) for key in actual_keys]
         # superset = set(self._expected.iteritems())
         # REFACT: subset.issubset(superset)
@@ -603,6 +606,13 @@ class ExpectTest(TestCase):
         expect(False).is_not.none()
         expect(lambda: expect(3).is_.none()).to_raise(AssertionError, r"Expect 3 to be None")
     
+    def test_exists(self):
+        expect(0).exists()
+        expect([]).exists()
+        expect(False).exists()
+        expect(None).does_not.exist()
+        
+        expect(lambda: expect(None).exists()).to_raise(AssertionError, r"Expect None to exist")
     def test_is_included_in(self):
         expect(1).is_included_in(1,2,3)
         expect(1).is_included_in([1,2,3])
