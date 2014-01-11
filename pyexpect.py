@@ -8,6 +8,15 @@
 # Rubys RSpec that got me longing for a similar syntax
 # Robert who suggested lots of great api ideas
 
+# TODO: 
+# - Document how to use chaining
+# - Mark deprecated matchers
+# - Ensure no matcher disapears during an update
+# - Document deprecation cycle
+# - get build server + button on bitbucket
+# - get coverage + button on bitbucket
+# - get documentation + button on bitbucket
+
 __all__ = ['expect']
 
 import re
@@ -91,69 +100,70 @@ class expect(object):
     # Beware the consequences if you break this promise. :)
     
     # On naming matchers: Their name should be clear and fit in with the naming scheme of the existing 
-    # matchers. That is: short, active, prepended with a conjugation of be
-    # Sensible alternative names are encouraged after the method definition to allow the matchers
-    # To be used sensibly in a sentence like matter for those who want it
-    # REFACT: consider switching to the short form as the default and prefer to get the combinations from the 
-    # arbitrary chaining support?
+    # matchers. That is: short and active if possible. Imagine prepended it with a conjugation of be and
+    # it should read good.
+    # Include alternative names where it makes sense. There should always be an alternative that read good
+    # without resorting to chaining.
     
     # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
     # `hf_unhide` is often the keyword here.
     
-    # REFACT: on the one hand the aliasses are really nice to to use, on the other hand they create ambiguity
-    # because not all names are completely coherent. Maybe it is better to abandon them and just allow 'not_' 
-    # prefixes and do the rest via arbitrary chaining?
-    
-    def is_true(self):
+    def true(self):
         self._assert(self._expected is True, "to be True")
     
-    true = is_true
+    is_true = true
     
-    def is_false(self):
+    def false(self):
         self._assert(self._expected is False, "to be False")
     
-    false = is_false
+    is_false = false
     
-    def is_none(self):
+    def none(self):
         self._assert(self._expected is None, "to be None")
     
-    none = is_none
+    is_none = none
     
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
-    def is_equal(self, something):
+    def equal(self, something):
         self._assert(something == self._expected, "to be equal to {0!r}", something)
     
-    __eq__ = equals = equal = to_equal = is_equal
+    __eq__ = equals = equal
+    to_equal = is_equal = equal
     
-    def is_different(self, something):
+    def different(self, something):
         self.not_ == something
     
-    __ne__ = is_different
+    __ne__ = different
+    is_different = different
     
-    def to_be(self, something):
+    def be(self, something):
         self._assert(something is self._expected, "to be {0!r}", something)
     
-    is_ = be = be_same = is_same = be_identical = is_identical = to_be
+    same = identical = is_ = be
+    be_same = is_same = be_identical = is_identical = to_be = be
     
-    def is_trueish(self):
+    def trueish(self):
         self._assert(bool(self._expected) is True, "to be trueish")
     
-    truthy = truish = trueish = is_trueish
+    truthy = truish = trueish
+    is_trueish = trueish
     
-    def is_falseish(self):
+    def falseish(self):
         self._assert(bool(self._expected) is False, "to be falseish")
     
-    falsy = falsish = falseish = is_falseish
+    falsy = falsish = falseish
+    is_falseish = falseish
     
-    def does_include(self, *needles):
+    def includes(self, *needles):
         for needle in needles:
             self._assert(needle in self._expected, "to include {0!r}", needle)
     
-    contain = contains = to_include = include = includes = does_include
+    contain = contains = include = includes
+    does_include = to_include = includes
     
-    def is_included_in(self, sequence_or_atom, *additional_atoms):
+    def within(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
         if len(additional_atoms) > 0:
             sequence = [sequence_or_atom]
@@ -161,9 +171,10 @@ class expect(object):
         
         self._assert(self._expected in sequence, "is included in {0!r}", sequence)
     
-    in_ = included_in = is_included_in
+    in_ = included_in = within
+    is_within = is_included_in = within
     
-    def has_sub_dict(self, a_subdict=None, **kwargs):
+    def sub_dict(self, a_subdict=None, **kwargs):
         assert isinstance(self._expected, dict), self._message("to be a dictionary", self._expected)
         
         if a_subdict is None:
@@ -177,19 +188,21 @@ class expect(object):
         # REFACT: subset.issubset(superset)
         self._assert(expected_items == actual_items, 'to contain dict {0!r}', a_subdict)
     
-    includes_dict = contains_dict = sub_dict = subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict
+    includes_dict = contains_dict = subdict = sub_dict
+    have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
-    def to_match(self, regex):
+    def matches(self, regex):
         assert isinstance(self._expected, basestring), self._message("to be a string")
         
         self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{0!r}", regex)
     
-    match = matches = is_matching = to_match
+    match = matches
+    is_matching = to_match = matches
     
     # TODO: consider with statement support to allow code like this
     # with expect.raises(AssertionError):
     #   something.that_might_raise()
-    def to_raise(self, exception_class=Exception, message_regex=None):
+    def raises(self, exception_class=Exception, message_regex=None):
         """Be carefull with negative raise assertions as they swallow all exceptions that you 
         don't specify. If you say `expect(raiser).not_.to_raise(FooException, 'fnord')` this 
         is interpreted as: every other exception that doesn't conform to this description is 
@@ -214,54 +227,66 @@ class expect(object):
                 "to raise {0} with message matching:\n\tr'{1}'\nbut it raised:\n\t{2!r}", 
                 exception_class.__name__, message_regex, caught_exception)
     
-    throws = is_throwing = raise_ = raises = is_raising = to_raise
+    throwing = throws = raise_ = raising = raises
+    is_raising = to_raise = is_throwing = raises
     
-    def is_empty(self):
+    def empty(self):
         self._assert(len(self._expected) == 0, "to be empty")
     
-    empty = is_empty
+    is_empty = empty
     
-    def is_instance(self, a_class):
+    def instance_of(self, a_class):
         self._assert(isinstance(self._expected, a_class), "to be instance of '{0}'", a_class.__name__)
     
-    instanceof = is_instance_of = instance_of = isinstance = is_instance
+    isinstance = instanceof = instance_of
+    is_instance = is_instance_of = instance_of
     
-    def has_length(self, a_length):
+    def length(self, a_length):
         self._assert(len(self._expected) == a_length, "to have length {0}", a_length)
     
-    len = length = count = has_count = has_length
+    len = count = length
+    has_count = has_length = length
     
-    def is_greater(self, smaller):
-        self._assert(self._expected > smaller, "to be greater then {0!r}", smaller)
+    def  greater_than(self, smaller):
+        self._assert(self._expected > smaller, "to be greater than {0!r}", smaller)
     
-    __gt__ = bigger = bigger_then = larger = larger_then = is_greater_then = is_greater
+    __gt__ = bigger = larger = larger_than = greater = greater_than
+    is_greater_than = is_greater = greater_than
+    # TODO: consider to include *_then because it's such a common error?
     
-    def is_greater_or_equal(self, smaller_or_equal):
-        self._assert(self._expected >= smaller_or_equal, "to be greater or equal then {0!r}", smaller_or_equal)
+    def greater_or_equal(self, smaller_or_equal):
+        self._assert(self._expected >= smaller_or_equal, "to be greater or equal than {0!r}", smaller_or_equal)
     
-    __ge__ = greater_or_equal_then = is_greater_or_equal_then = greater_or_equal = is_greater_or_equal
+    __ge__ = greater_or_equal_than = greater_or_equal
+    is_greater_or_equal_than = is_greater_or_equal = greater_or_equal
+    # TODO: consider to include *_then because it's such a common error?
     
-    def is_less_then(self, greater):
-        self._assert(self._expected < greater, "to be less then {0!r}", greater)
+    def less_than(self, greater):
+        self._assert(self._expected < greater, "to be less than {0!r}", greater)
     
-    __lt__ = smaller = smaller_then = lesser = lesser_then = less_then = smaller_then = is_smaller_then = is_less_then
+    __lt__ = smaller = smaller_than = lesser = lesser_than = less = less_than
+    is_smaller_than = is_less_than = less_than
+    # TODO: consider to include *_then because it's such a common error?
     
-    def is_less_or_equal(self, greater_or_equal):
-        self._assert(self._expected <= greater_or_equal, "to be less or equal then {0!r}", greater_or_equal)
+    def less_or_equal(self, greater_or_equal):
+        self._assert(self._expected <= greater_or_equal, "to be less or equal than {0!r}", greater_or_equal)
     
-    __le__ = smaller_or_equal = smaller_or_equal_then = is_smaller_or_equal = is_smaller_or_equal_then = is_less_or_equal_then = is_less_or_equal
+    __le__ = smaller_or_equal = smaller_or_equal_than = lesser_or_equal = lesser_or_equal_than = less_or_equal_than = less_or_equal
+    is_smaller_or_equal = is_smaller_or_equal_than = is_less_or_equal_than = is_less_or_equal = less_or_equal
+    # TODO: consider to include *_then because it's such a common error?
     
     # TODO: consider adding is_within_exclusive_range
     # TODO: consider supporting slice syntax as alias. expect(3)[2:4] doesn't look natural though
-    def is_within_range(self, lower, higher):
+    def within_range(self, lower, higher):
         self._assert(lower <= self._expected <= higher, "to be between {0!r} and {1!r}", lower, higher)
     
-    is_between = is_within = is_within_range
+    is_between = is_within_range = within_range
     
-    def is_close(self, actual, delta):
-        self._assert((actual - delta) <= self._expected <= (actual + delta), "to be close to {0!r} with max delta {1!r}", actual, delta)
+    def close_to(self, actual, max_delta):
+        self._assert((actual - max_delta) <= self._expected <= (actual + max_delta), "to be close to {0!r} with max delta {1!r}", actual, max_delta)
     
-    is_about = about = almost_equal = is_almost_equal = close_to = is_close_to = is_close
+    about_equals = about_equal = about = almost_equals = almost_equal = close = close_to
+    is_about =  is_almost_equal = is_close = is_close_to = close_to
     
     ## Internals ########################################################################################
     
@@ -703,30 +728,30 @@ class ExpectTest(TestCase):
         expect(lambda: expect([1]).to_have.length(23)) \
             .to_raise(AssertionError, r"Expect \[1\] to have length 23")
     
-    def test_is_greater_then(self):
-        expect(3).is_greater_then(1)
+    def test_is_greater_than(self):
+        expect(3).is_greater_than(1)
         expect(3) > 1
-        expect(lambda: expect(10) > 15).to_raise(AssertionError, r"Expect 10 to be greater then 15")
-        expect(lambda: expect(1).is_greater_then(3)) \
-            .to_raise(AssertionError, r"Expect 1 to be greater then 3")
+        expect(lambda: expect(10) > 15).to_raise(AssertionError, r"Expect 10 to be greater than 15")
+        expect(lambda: expect(1).is_greater_than(3)) \
+            .to_raise(AssertionError, r"Expect 1 to be greater than 3")
     
-    def test_is_greater_or_equal_then(self):
-        expect(3).is_greater_or_equal_then(3)
-        expect(3).is_greater_or_equal_then(2)
+    def test_is_greater_or_equal_than(self):
+        expect(3).is_greater_or_equal_than(3)
+        expect(3).is_greater_or_equal_than(2)
         expect(7) >= 7
         expect(5) >= 2
         
-        expect(lambda: expect(20) >= 30).to_raise(AssertionError, r"Expect 20 to be greater or equal then 30")
+        expect(lambda: expect(20) >= 30).to_raise(AssertionError, r"Expect 20 to be greater or equal than 30")
     
-    def test_is_less_then(self):
-        expect(7).is_smaller_then(10)
+    def test_is_less_than(self):
+        expect(7).is_smaller_than(10)
         expect(10) < 12
-        expect(lambda: expect(10) < 3).to_raise(AssertionError, "Expect 10 to be less then 3")
+        expect(lambda: expect(10) < 3).to_raise(AssertionError, "Expect 10 to be less than 3")
     
-    def test_is_less_or_equal_then(self):
-        expect(10).is_smaller_or_equal_then(10)
+    def test_is_less_or_equal_than(self):
+        expect(10).is_smaller_or_equal_than(10)
         expect(10) <= 10
-        expect(lambda: expect(10) <= 5).raises(AssertionError, "Expect 10 to be less or equal then 5")
+        expect(lambda: expect(10) <= 5).raises(AssertionError, "Expect 10 to be less or equal than 5")
     
     def test_is_within_range(self):
         expect(3).is_within_range(1,10)
@@ -735,9 +760,11 @@ class ExpectTest(TestCase):
 
     def test_is_close_to(self):
         expect(3.4).is_close_to(3, 0.5)
+        expect(-3.4).is_close_to(-3, 0.5)
         expect(3.4).is_close_to(3.1, 0.5)
         expect(3.4).is_close_to(10, 10)
         expect(10.2).not_to_be.close_to(3, 4)
+        expect(-3).is_not.close_to(-2, 0.5)
         
         expect(lambda: expect(10).is_.close_to(2, 3)).to_raise(AssertionError, "Expect 10 to be close to 2 with max delta 3")
     
