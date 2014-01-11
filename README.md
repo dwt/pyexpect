@@ -4,21 +4,21 @@ The whole point of the expect patter is to allow concise assertions that generat
 
 Best viewed in an example:
 
-    >>> expect(3).to_equal(4)
+    >>> expect(3).to.equal(4)
     Traceback (most recent call last):
       File "<input>", line 1, in <module>
       File "expect.py", line 146, in __call__
-    AssertionError: Expect 3 to be equal to 4
+    AssertionError: Expect 3 to equal 4
 
 Line noise is reduced as much as possible, so the error message is displayed as near to the problematic code as possible. No stack traces to dig through, clear and consistent error messages that tell you what went wrong. Thats how assertions should work.
 
 ## Why should I use expect() over self.assert*?
 
-This is best explained in cotrast to the classic assertion pattern like the python unittest module uses. However, these assertions can be used anywhere and do not depend on any unittest package. But now for the example:
+This is best explained in cotrast to the classic assertion pattern like the python unittest module uses. In addition to all that however, these assertions can be used anywhere and do not depend on any unittest package. But lets start with an example:
 
     self.assertEquals('foo', 'bar')
 
-In this assertion it is not possible to see which of the arguments is the expected and which is the actual value. While this ordering is mostly internally consistent within the unittest package (sadly only mostly), it is not consistent between all the different unit testing packages out there for python and especially not between different languages this pattern has been implemented on.
+In this assertion it is not possible to see which of the arguments is the expected and which is the actual value. While this ordering is mostly internally consistent between the different assertions within the unittest package (sadly only mostly), it is not consistent between all the different unit testing packages out there for python and especially not between different languages this pattern has been implemented on.
 
 To add insult to injury some frameworks will then output the error message like this:
 (Yes unittest I'm looking at you!)
@@ -41,21 +41,22 @@ to the source code:
 
     Expect 'foo' to equal 'bar'.
 
-Thus the mapping from the error message is immediate and complete saving you minutes each time, enhancing your focus, productivity and - most important - your enjoyment when working with these expectations.
+Thus the mapping from the error message is immediate and complete saving you minutes each time, enhancing your focus, productivity and - most important - your enjoyment when working with unit tests.
 
-As a bonus they are not coupled to any TestCase class so you can easily reuse them anywhere in your code to formalize expectations that your code has about some internal state. Oh and they are shorter, so you even have less to write while getting clearer and more to the point assertions. Almost like having a cake and eating it too!
+As a bonus all these exceptions are not coupled to any TestCase class so you can easily reuse them anywhere in your code to formalize expectations that your code has about some internal state. Sometimes called 'Design by Contract' or 'Fail Fast' programming. Oh and these expectations are generally shorter, so you even have less to type while getting clearer and more to the point assertions into your tests. Almost like having a cake and eating it too!
 
 ## So give me the features!
 
 Glad you ask! Here you go
 
-1.  Lots of included matchers: Take a look at the source to see all the assertions you need to get started. From `is_equal` over `to_be` and `to_raise` till `to_match` - we've got you covered. And not only that, but each matcher has some aliasses so you can use the variant that reads the best in your assertion.
+1.  Lots of included matchers: Take a look at the source to see all the assertions you need to get started. From `equals` over `be` or `is_` and `raises` till `matches` - we've got you covered. And not only that, but each matcher has some aliasses so you can use the variant that reads the best in your assertion.
     
     Some examples:
     
         expect(True).is_.true()
         expect(True).is_true()
-        expect(True).is_equal(True)
+        expect(True).equals(True)
+        expect(True).is_.equal(True)
         expect(True) == True
         expect(raising_calable).raises()
         expect(raising_calable).to_raise()
@@ -68,18 +69,19 @@ Glad you ask! Here you go
         expect(23).is_.equal(23)
         # or go all out - but just because it works doesn't mean it's sensible
         expect(23).to_be_chaned.with_something.that_makes_sense_in\
-            .your_context.before_it.calls_the.matcher.equals(23)
+            .your_context.before_it.calls_the.matcher.as_the_last.segment(23)
+        # Here .segment(23) would be the matcher that is called
     
     Choose whatever makes sense for your specific test to read well so that reading the test later feels natural and transports the meaning of the code as best as possible.
 
-1.  Simplicity of extension: All the other python packages I've looked at each matcher is a class or something that needs to be registered via a more or less complicated process, arguments are not just straightforward method arguments, `not` is not supported as a native framework concept...
+1.  Simplicity of extension: In all other python expect implementations I've looked at, at least some aspects of them are way more complicated. Each matcher is a class or something that needs to be registered via a more or less complicated process, arguments are not just straightforward method arguments, `not` is not supported as a native framework concept...
     
-    In contrast in pyexpect if you want to register a new matcher, it's as easy as defining a method and then assigning it to as many instance method names as you want:
+    In contrast in pyexpect if you want to register a new matcher, it's as easy as defining a method and then assigning it to as many instance method names as you want, asserting what you want to assert within and clearly define the error message that is going to be raised:
     
-        def is_falseish(self):
-            # whatever you have to do. For helpers and availeable values see expect() source
+        def falseish(self):
+            # See expect() source for availeable helpers
             self._assert(bool(self._expected) is False, "to be falseish")
-        expect.is_falseish = is_falseish
+        expect.is_falsish = expect.is_falseish = expect.falsish = expect.falseish = falseish
     
     Done!
     
@@ -107,7 +109,7 @@ Glad you ask! Here you go
     
     For more examples, have a look at the testsuite for the matchers.
     
-    If you want to add your own matchers, sometimes the inverse doesn't work automatically if you implement your expectations with multiple checks. In that case the inverse matcher might assert the wrong thing, because the order of the checks doesn't make sense in the inverted case. Should that happen, take a look at  `expect._assert_if_positive()`, `expect._assert_if_negative()` and `expect._is_negative()`. Be advised however, that good matchers should need this only very rarely.
+    If you want to add your own matchers, sometimes the inverse doesn't work automatically if you implement your expectations as multiple consecutive checks. In that case the inverse matcher might assert the wrong thing, because the order of the checks doesn't make sense in the inverted case. Should that happen, take a look at  `expect._assert_if_positive()`, `expect._assert_if_negative()` and `expect._is_negative()`. Be advised however, that good matchers should need this only very rarely.
 
 1.  Great error messages: pyexpect takes great care to ensure every aspect of experiencing an error is as concise and usefull as possible. All error messages have the same format that always starts with what is expected and then is customized by the matcher to pack as much information as possible.
     
@@ -143,17 +145,17 @@ Glad you ask! Here you go
     
     Even in this simple case the actual error is 4 lines removed from the actual error.
     
-    In pyexpect however a test like this:
+    Using pyexpect however a test like this:
     
         from pyexpect import expect
-        def is_something(self):
-            self._assert(self._expected == 'something', "to be something")
-        expect.is_something = is_something
+        def something(self):
+            self._assert(self._expected == 'something', "to be 'something'")
+        expect.something = something
         
         from unittest import TestCase, main
         class Test(TestCase):
             def test_something(self):
-                expect('fnord').is_something()
+                expect('fnord').to_be.something()
         main()
     
     Gives you this output (standard `unittest.main()`):
@@ -162,7 +164,7 @@ Glad you ask! Here you go
         ----------------------------------------------------------------------
         Traceback (most recent call last):
           File "test_example.py", line 11, in test_something
-            expect('fnord').is_something()
+            expect('fnord').to_be.something()
           File "/Users/dwt/Code/Projekte/python-expect/pyexpect.py", line 150, in __call__
             raise assertion
         AssertionError: Expect 'fnord' to be something
@@ -171,7 +173,7 @@ Glad you ask! Here you go
         
         FAIL: test_example:Test.test_something
           mate +11  test_example.py  # test_something
-            expect('fnord').is_something()
+            expect('fnord').to_be.something()
           mate +150 pyexpect.py  # __call__
             raise assertion
         AssertionError: Expect 'fnord' to be something
@@ -180,18 +182,20 @@ Glad you ask! Here you go
         
         self = <test_example.Test testMethod=test_something>
         def test_something(self):
-        >       expect('fnord').is_something()
+        >       expect('fnord').to_be.something()
         E       AssertionError: Expect 'fnord' to be something
     
-    That is, the error messages are much easier to read because there is less fluff in between that distracts you from your tests. As it should be.
+    Notice here, that the actual matcher `someting()` calls another method `_assert` to do the actual assertion and compose the error message, but none of this is visible in the stack trace? That is true for any methods you call in the matcher, so call into your api or whatever you need to trigger the assertion and enjoy readable error message none the less.
+    
+    Therefore, error messages are much easier to read and there is less fluff in between the error and the cause to distract you. As it should be.
 
-1.  Completeness: You can use this package as a standalone assertion package that gives you much more expressive assertions than just using using `assert` and refined error messages to boot.
+1.  Usage outside of unit tests: You can use this package as a standalone assertion package that gives you much more expressive assertions than just using using `assert` and refined error messages to boot.
     
     Just assert away wherever you need it to get robust code by failing fast:
     
         from pyexpect import expect
         def some_method(some_argument):
-            expect(some_argument).is_within_range(3,20)
+            expect(some_argument).is_.between(3,20)
             something(some_argument)
     
     And should you need it, you can switch the assertions from throwing to returning a `(bool, string)` tuple so you can reuse it in your api.
@@ -205,4 +209,4 @@ Glad you ask! Here you go
 
 1.  Test coverage: Of course pyexpect has full test coverage ensuring that it does exactly what you expect it to do.
 
-1.  Think something is could be better in this documentation? Pull requests welcome. :)
+1.  Think something could be better in this documentation? Send a pull request. :)
