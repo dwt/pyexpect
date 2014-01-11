@@ -9,7 +9,6 @@
 # Robert who suggested lots of great api ideas
 
 # TODO: 
-# - Document how to use chaining
 # - Ensure no matcher disapears during an update
 # - get build server + button on bitbucket
 # - get coverage + button on bitbucket
