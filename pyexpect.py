@@ -191,18 +191,18 @@ class expect(object):
     includes_dict = contains_dict = subdict = sub_dict
     have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
-    def matches(self, regex):
+    def to_match(self, regex):
         assert isinstance(self._expected, basestring), self._message("to be a string")
         
         self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{0!r}", regex)
     
-    match = matches
-    is_matching = to_match = matches
+    match = matching = matches = to_match
+    is_matching = to_match
     
     # TODO: consider with statement support to allow code like this
     # with expect.raises(AssertionError):
     #   something.that_might_raise()
-    def raises(self, exception_class=Exception, message_regex=None):
+    def to_raise(self, exception_class=Exception, message_regex=None):
         """Be carefull with negative raise assertions as they swallow all exceptions that you 
         don't specify. If you say `expect(raiser).not_.to_raise(FooException, 'fnord')` this 
         is interpreted as: every other exception that doesn't conform to this description is 
@@ -227,8 +227,8 @@ class expect(object):
                 "to raise {0} with message matching:\n\tr'{1}'\nbut it raised:\n\t{2!r}", 
                 exception_class.__name__, message_regex, caught_exception)
     
-    throwing = throws = raise_ = raising = raises
-    is_raising = to_raise = is_throwing = raises
+    throw = throwing = throws = raise_ = raising = raises = to_raise
+    is_raising = is_throwing = to_raise
     
     def empty(self):
         self._assert(len(self._expected) == 0, "to be empty")
@@ -247,7 +247,7 @@ class expect(object):
     len = count = length
     has_count = has_length = length
     
-    def  greater_than(self, smaller):
+    def greater_than(self, smaller):
         self._assert(self._expected > smaller, "to be greater than {0!r}", smaller)
     
     __gt__ = bigger = larger = larger_than = greater = greater_than
@@ -277,11 +277,12 @@ class expect(object):
     
     # TODO: consider adding is_between_exclusive
     # TODO: consider supporting slice syntax as alias. expect(3)[2:4] doesn't look natural though
+    # REFACT: consider to change to be more like range(), i.e. lower bound included, upper bound excluded
     def between(self, lower, higher):
         self._assert(lower <= self._expected <= higher, "to be between {0!r} and {1!r}", lower, higher)
     
     within_range = between
-    is_between = is_within_range = is_between = between
+    is_within_range = is_between = between
     
     def close_to(self, actual, max_delta):
         self._assert((actual - max_delta) <= self._expected <= (actual + max_delta), "to be close to {0!r} with max delta {1!r}", actual, max_delta)
@@ -455,10 +456,10 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'")
     
     def test_should_ensure_not_is_on_word_boundaries(self):
-        expect(lambda: expect(True).nothing.to_be(True)).not_.to_raise()
-        expect(lambda: expect(True).annotation.to_be(True)).not_.to_raise()
-        expect(lambda: expect(True).an_not_ation.to_be(True)).to_raise()
-        expect(lambda: expect(True).an_not.to_be(True)).to_raise()
+        expect(lambda: expect(True).nothing_that_negates.is_(True)).not_.to_raise()
+        expect(lambda: expect(True).annotation.to.be(True)).not_.to_raise()
+        expect(lambda: expect(True).an_not_ation.to.be(True)).to_raise()
+        expect(lambda: expect(True).an_not.to.be(True)).to_raise()
     
     def test_should_allow_custom_messages(self):
         def messaging(message):
