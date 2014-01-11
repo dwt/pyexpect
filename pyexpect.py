@@ -10,9 +10,7 @@
 
 # TODO: 
 # - Document how to use chaining
-# - Mark deprecated matchers
 # - Ensure no matcher disapears during an update
-# - Document deprecation cycle
 # - get build server + button on bitbucket
 # - get coverage + button on bitbucket
 # - get documentation + button on bitbucket
@@ -99,11 +97,21 @@ class expect(object):
     # All public methods on this class are expected to be matchers.
     # Beware the consequences if you break this promise. :)
     
-    # On naming matchers: Their name should be clear and fit in with the naming scheme of the existing 
-    # matchers. That is: short and active if possible. Imagine prepended it with a conjugation of be and
-    # it should read good.
-    # Include alternative names where it makes sense. There should always be an alternative that read good
-    # without resorting to chaining.
+    # On naming matchers: 
+    # Their name should be clear and fit in with the naming scheme of the existing matchers. 
+    # That is: short and active if possible. Matcher names should fullfill two roles. 
+    # They should allow direct usage, without chaining in front of them:
+    #    expect(3).equals(3)
+    # They should also allow chaining to read more like a sentence:
+    #    expect(3).to.equal(3)
+    #    expect(3).is_.equal(3)
+    # If sensible, also support an operator overloaded forms:
+    #    expect(3) == 3
+    # The goal is to allow the code to read sensible and as similar to the generated error message as possible.
+    # Include as many alternative names as make sense.
+    
+    # Right now some be_ prefixes are included as aliasses, but I'm feeling confident that I will probably phase 
+    # them out in favor of using arbitrary chaining to achieve their effect.
     
     # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
