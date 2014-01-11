@@ -664,6 +664,7 @@ class ExpectTest(TestCase):
         expect("cde").to_not.match(r"[ab]+")
         expect("fnord").matches(r"^fnord$")
         expect('bar').matches(r'\Abar\Z')
+        expect('bär').matches(r'\Abär\Z')
         
         expect(lambda: expect(32).matches("32"))\
             .raises(AssertionError, r"Expect 32 to be a string")
