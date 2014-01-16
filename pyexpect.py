@@ -522,8 +522,9 @@ class ExpectTest(TestCase):
     def _test_should_give_good_error_message_when_missing_argument_to_expect(self):
         pass
     
-    # Matchers
+    # Matchers ##########################################################################################
     
+    # REFACT: rename tests to use the canonical name
     def test_is_trueish(self):
         expect(True).is_.trueish()
         expect(True).is_.truish()
@@ -589,6 +590,8 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"Expect 23 to equal 42")
         expect(lambda: expect(23).not_to.equal(23)) \
             .to_raise(AssertionError, r"Expect 23 not to equal 23")
+        
+        # FIXME: make output multi line to make it easier to parse if individual output is longish
     
     def test_is_identical(self):
         expect(True).is_identical(True)
@@ -791,5 +794,14 @@ class ExpectTest(TestCase):
         
         expect(lambda: expect(10).is_.close_to(2, 3)).to_raise(AssertionError, "Expect 10 to be close to 2 with max delta 3")
     
+    def _test_to_increases_by(sel):
+        # Not sure what the right syntax for this should be
+        # increase_by, increases_by
+        # with expect(count_getter).increases_by(a_number):
+        #   increase_count()
+        # expect(increaser).to.increase_by(accessor, a_number)
+        pass
+    
+
 if __name__ == '__main__':
     main()
