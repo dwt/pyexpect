@@ -673,7 +673,7 @@ class ExpectTest(TestCase):
         expect('bär').matches(r'\Abär\Z')
         
         expect(lambda: expect(32).matches("32"))\
-            .raises(AssertionError, r"Expect 32 to be instance of 'basestring'")
+            .raises(AssertionError, r"Expect 32 to be instance of '.*str.*'")
         
         expect(lambda: expect('foo\nbar\nbaz').matches(r'^bar$')).to_raise(AssertionError)
         expect(lambda: expect('cde').matches(r'fnord')) \
