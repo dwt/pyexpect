@@ -186,7 +186,7 @@ class expect(object):
     is_within = is_included_in = within
     
     def sub_dict(self, a_subdict=None, **kwargs):
-        assert isinstance(self._expected, dict), self._message("to be a dictionary", self._expected)
+        expect(self._expected).is_instance(dict)
         
         if a_subdict is None:
             a_subdict = dict()
@@ -204,7 +204,7 @@ class expect(object):
     
     def to_match(self, regex):
         string_type = str if sys.version > '3' else basestring
-        assert isinstance(self._expected, string_type), self._message("to be a string")
+        expect(self._expected).is_instance(string_type)
         
         self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{0!r}", regex)
     
@@ -222,9 +222,8 @@ class expect(object):
         """
         # REFACT: consider to change to_raise to let all unexpected exceptions pass through
         # Not sure what that means to correctly implement the negative side though
-        assert callable(self._expected), "Expect {0!r} to be callable".format(self._expected)
+        expect(self._expected).is_callable()
         
-        # import sys; sys.stdout = sys.__stdout__; from bpdb import set_trace; set_trace()
         caught_exception = None
         try: self._expected()
         except BaseException as exception: caught_exception = exception
@@ -252,6 +251,11 @@ class expect(object):
     
     isinstance = instanceof = instance_of
     is_instance = is_instance_of = instance_of
+    
+    def is_callable(self):
+        self._assert(callable(self._expected) is True, "to be callable")
+    
+    callable = is_callable
     
     def length(self, a_length):
         self._assert(len(self._expected) == a_length, "to have length {0}", a_length)
@@ -651,7 +655,7 @@ class ExpectTest(TestCase):
         expect(dict(foo=['bar'])).to.have_subdict(foo=['bar'])
         
         expect(lambda: expect(42).has_subdict())\
-            .to_raise(AssertionError, r"Expect 42 to be a dictionary")
+            .to_raise(AssertionError, r"Expect 42 to be instance of 'dict'")
         
         expect(lambda: expect(dict()).to_have.subdict(foo='bar')) \
             .to_raise(AssertionError, r"Expect {} to contain dict {'foo': 'bar'}")
@@ -669,7 +673,7 @@ class ExpectTest(TestCase):
         expect('bär').matches(r'\Abär\Z')
         
         expect(lambda: expect(32).matches("32"))\
-            .raises(AssertionError, r"Expect 32 to be a string")
+            .raises(AssertionError, r"Expect 32 to be instance of 'basestring'")
         
         expect(lambda: expect('foo\nbar\nbaz').matches(r'^bar$')).to_raise(AssertionError)
         expect(lambda: expect('cde').matches(r'fnord')) \
@@ -744,6 +748,15 @@ class ExpectTest(TestCase):
         expect("").is_instance(str)
         
         expect(lambda: expect("").instanceof(list)).to_raise(AssertionError, r"Expect '' to be instance of 'list'")
+    
+    def test_is_callable(self):
+        expect(lambda:None).is_callable()
+        def foo():pass
+        expect(foo).is_.callable()
+        expect(3).is_not.callable()
+        
+        expect(lambda: expect(3).is_.callable()) \
+            .raises(AssertionError, r"Expect 3 to be callable")
     
     def test_has_length(self):
         expect("123").has_length(3)
