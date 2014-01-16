@@ -17,7 +17,7 @@
 
 __all__ = ['expect']
 
-import re
+import re, sys
 
 class expect(object):
     """Minimal but very flexible implementation of the expect pattern.
@@ -203,7 +203,6 @@ class expect(object):
     have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
     def to_match(self, regex):
-        import sys
         string_type = str if sys.version > '3' else basestring
         assert isinstance(self._expected, string_type), self._message("to be a string")
         
@@ -503,7 +502,7 @@ class ExpectTest(TestCase):
             assertion = a
         
         expect(assertion) != None
-        import sys, traceback
+        import traceback
         traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
         expect(traceback).not_to.contain('_assert')
         # Would like this one too, but is only hidden in py.test
@@ -525,7 +524,7 @@ class ExpectTest(TestCase):
     # Matchers ##########################################################################################
     
     # REFACT: rename tests to use the canonical name
-    def test_is_trueish(self):
+    def test_trueish(self):
         expect(True).is_.trueish()
         expect(True).is_.truish()
         expect([1]).is_.trueish()
@@ -539,7 +538,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect([1]).not_to_be.trueish()) \
             .to_raise(AssertionError, r"Expect \[1\] not to be trueish")
     
-    def test_is_falseish(self):
+    def test_falseish(self):
         expect(False).to.be.falsish()
         expect(False).to.be.falseish()
         expect(0).to.be.falseish()
@@ -551,7 +550,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect('foo').to.be.falsish()) \
             .to_raise(AssertionError, r"")
     
-    def test_is_true(self):
+    def test_true(self):
         expect(True).true()
         expect(False).is_not.true()
         expect([1]).is_not.true()
@@ -562,7 +561,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect(True).not_to_be.true()) \
             .to_raise(AssertionError, r"Expect True not to be True")
     
-    def test_is_false(self):
+    def test_false(self):
         expect(False).to.be.false()
         expect(None).not_to_be.false()
         expect([]).not_to_be.false()
@@ -575,7 +574,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect(0).to.be.false()) \
             .to_raise(AssertionError, r"Expect 0 to be False")
     
-    def test_is_equal(self):
+    def test_equal(self):
         expect('foo').equals('foo')
         expect('foo').to.equal('foo')
         expect('foo').not_to.equal('fnord')
@@ -593,7 +592,7 @@ class ExpectTest(TestCase):
         
         # FIXME: make output multi line to make it easier to parse if individual output is longish
     
-    def test_is_identical(self):
+    def test_identical(self):
         expect(True).is_identical(True)
         expect(1).is_(1)
         expect(1).not_.to.be(2)
@@ -605,7 +604,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect(1).not_to.be(1)) \
             .to_raise(AssertionError, r"Expect 1 not to be 1")
     
-    def test_is_none(self):
+    def test_none(self):
         expect(None).is_none()
         expect(0).is_not.none()
         expect(False).is_not.none()
@@ -618,7 +617,7 @@ class ExpectTest(TestCase):
         expect(None).does_not.exist()
         
         expect(lambda: expect(None).exists()).to_raise(AssertionError, r"Expect None to exist")
-    def test_is_included_in(self):
+    def test_included_in(self):
         expect(1).is_included_in(1,2,3)
         expect(1).is_included_in([1,2,3])
         expect(23).is_not.included_in(1,2,3)
@@ -661,7 +660,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect(dict(foo='bar')).not_to_have.subdict(foo='bar')) \
             .to_raise(AssertionError, r"Expect {'foo': 'bar'} not to contain dict {'foo': 'bar'}")
     
-    def test_is_matching(self):
+    def test_matching(self):
         expect("abbbababababaaaab").is_matching(r"[ab]+")
         expect("fnordabbafnord").matches(r"[ab]+")
         expect("cde").to_not.match(r"[ab]+")
@@ -676,7 +675,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect('cde').matches(r'fnord')) \
             .to_raise(AssertionError, r"Expect 'cde' to be matched by regex r'fnord'")
     
-    def test_is_raising(self):
+    def test_raises(self):
         # is it an error to raise any other exception if a specific exception is expected? - yes
         # is it an error to raise any other exception if a specific exception is not expected? - could be ok, could be raised through
         
@@ -724,10 +723,9 @@ class ExpectTest(TestCase):
         expect(lambda: expect(raiser).not_.to_raise(NameError, r'fnord')).not_.to_raise()
         
         # Can catch exceptions that do not inherit from Exception to ensure everything is testable
-        import sys
         expect(lambda: sys.exit('gotcha')).to_raise(SystemExit)
     
-    def test_is_empty(self):
+    def test_empty(self):
         expect("").is_empty()
         expect([]).is_empty()
         expect(tuple()).is_empty()
@@ -741,7 +739,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect("23").is_empty()) \
             .to_raise(AssertionError, r"Expect '23' to be empty")
     
-    def test_is_instance(self):
+    def test_is_instance_of(self):
         expect(dict()).is_instance(dict)
         expect("").is_instance(str)
         
@@ -754,14 +752,14 @@ class ExpectTest(TestCase):
         expect(lambda: expect([1]).to_have.length(23)) \
             .to_raise(AssertionError, r"Expect \[1\] to have length 23")
     
-    def test_is_greater_than(self):
+    def test_greater_than(self):
         expect(3).is_greater_than(1)
         expect(3) > 1
         expect(lambda: expect(10) > 15).to_raise(AssertionError, r"Expect 10 to be greater than 15")
         expect(lambda: expect(1).is_greater_than(3)) \
             .to_raise(AssertionError, r"Expect 1 to be greater than 3")
     
-    def test_is_greater_or_equal_than(self):
+    def test_greater_or_equal_than(self):
         expect(3).is_greater_or_equal_than(3)
         expect(3).is_greater_or_equal_than(2)
         expect(7) >= 7
@@ -769,22 +767,22 @@ class ExpectTest(TestCase):
         
         expect(lambda: expect(20) >= 30).to_raise(AssertionError, r"Expect 20 to be greater or equal than 30")
     
-    def test_is_less_than(self):
+    def test_less_than(self):
         expect(7).is_smaller_than(10)
         expect(10) < 12
         expect(lambda: expect(10) < 3).to_raise(AssertionError, "Expect 10 to be less than 3")
     
-    def test_is_less_or_equal_than(self):
+    def test_less_or_equal_than(self):
         expect(10).is_smaller_or_equal_than(10)
         expect(10) <= 10
         expect(lambda: expect(10) <= 5).raises(AssertionError, "Expect 10 to be less or equal than 5")
     
-    def test_is_between(self):
+    def test_between(self):
         expect(3).is_between(1,10)
         expect(lambda: expect(10).is_between(1,3)).to_raise(AssertionError, "Expect 10 to be between 1 and 3")
     
 
-    def test_is_close_to(self):
+    def test_close_to(self):
         expect(3.4).is_close_to(3, 0.5)
         expect(-3.4).is_close_to(-3, 0.5)
         expect(3.4).is_close_to(3.1, 0.5)
@@ -794,12 +792,13 @@ class ExpectTest(TestCase):
         
         expect(lambda: expect(10).is_.close_to(2, 3)).to_raise(AssertionError, "Expect 10 to be close to 2 with max delta 3")
     
-    def _test_to_increases_by(sel):
+    def _test_increases_by(sel):
         # Not sure what the right syntax for this should be
         # increase_by, increases_by
         # with expect(count_getter).increases_by(a_number):
         #   increase_count()
         # expect(increaser).to.increase_by(accessor, a_number)
+        # expect(increaser, accessor).increases_by(a_number)
         pass
     
 
