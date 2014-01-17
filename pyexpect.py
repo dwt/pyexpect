@@ -225,8 +225,10 @@ class expect(object):
         expect(self._expected).is_callable()
         
         caught_exception = None
-        try: self._expected()
-        except BaseException as exception: caught_exception = exception
+        try:
+            self._expected()
+        except BaseException as exception:
+            caught_exception = exception
         
         is_right_class = isinstance(caught_exception, exception_class)
         if message_regex is None:
@@ -237,6 +239,8 @@ class expect(object):
             self._assert(is_right_class and has_matching_message, 
                 "to raise {0} with message matching:\n\tr'{1}'\nbut it raised:\n\t{2!r}", 
                 exception_class.__name__, message_regex, caught_exception)
+        
+        return caught_exception
     
     throw = throwing = throws = raise_ = raising = raises = to_raise
     is_raising = is_throwing = to_raise
@@ -370,7 +374,10 @@ class expect(object):
         # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
         # Hides the actual matcher and all the methods it calls to assert stuff.
         try:
-            self._selected_matcher(*args, **kwargs)
+            return_value = self._selected_matcher(*args, **kwargs)
+            if self._should_raise:
+                # if not, we want to return True
+                return return_value
         except AssertionError as assertion:
             if self._should_raise:
                 raise assertion
@@ -728,6 +735,11 @@ class ExpectTest(TestCase):
         
         # Can catch exceptions that do not inherit from Exception to ensure everything is testable
         expect(lambda: sys.exit('gotcha')).to_raise(SystemExit)
+        
+        # Return caught exception
+        exception = expect(raiser).to_raise(TestException)
+        expect(exception).is_instance_of(TestException)
+        expect(str(exception)).matches('test_exception')
     
     def test_empty(self):
         expect("").is_empty()
