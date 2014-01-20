@@ -262,7 +262,8 @@ class expect(object):
     callable = is_callable
     
     def length(self, a_length):
-        self._assert(len(self._expected) == a_length, "to have length {0}", a_length)
+        actual = len(self._expected)
+        self._assert(actual == a_length, "to have length {0}, but found length {1}", a_length, actual)
     
     len = count = length
     has_count = has_length = length
@@ -774,8 +775,8 @@ class ExpectTest(TestCase):
         expect("123").has_length(3)
         expect(set([1])).len(1)
         
-        expect(lambda: expect([1]).to_have.length(23)) \
-            .to_raise(AssertionError, r"Expect \[1\] to have length 23")
+        expect(lambda: expect([42]).to_have.length(23)) \
+            .to_raise(AssertionError, r"Expect \[42\] to have length 23, but found length 1")
     
     def test_greater_than(self):
         expect(3).is_greater_than(1)
