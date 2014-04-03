@@ -1,6 +1,6 @@
 # pyexpect: Minimal but very flexible implementation of the expect pattern
 
-The whole point of the expect patter is to allow concise assertions that generate predictable and good error messages.
+The whole point of the expect pattern is to allow concise assertions that generate predictable and good error messages.
 
 Best viewed in an example:
 
