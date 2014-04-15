@@ -37,7 +37,6 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
-        'License :: OSI Approved :: Python Software Foundation License',
         'Programming Language :: Python',
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Quality Assurance',
