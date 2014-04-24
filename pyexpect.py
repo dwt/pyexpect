@@ -475,17 +475,17 @@ class ExpectTest(TestCase):
         expect(calls).to.contain((instance,))
         expect(calls).to.contain((instance, 'bar', 'baz'))
     
-    def test_good_error_message_when_calling_non_existing_matcher(self):
+    def test_error_message_when_calling_non_existing_matcher_is_good(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
             .to_raise(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'")
     
-    def test_should_ensure_not_is_on_word_boundaries(self):
+    def test_not_is_only_allowed_on_word_boundaries(self):
         expect(lambda: expect(True).nothing_that_negates.is_(True)).not_.to_raise()
         expect(lambda: expect(True).annotation.to.be(True)).not_.to_raise()
         expect(lambda: expect(True).an_not_ation.to.be(True)).to_raise()
         expect(lambda: expect(True).an_not.to.be(True)).to_raise()
     
-    def test_should_allow_custom_messages(self):
+    def test_can_specify_custom_message(self):
         def messaging(message):
             return lambda: expect(True, message=message).not_.to_be(True)
         expect(messaging('fnord')).to_raise(AssertionError, r"^fnord$")
@@ -499,14 +499,14 @@ class ExpectTest(TestCase):
         
         # TODO: allow partially formatted messages from expect.with_message
     
-    def test_should_allow_to_formulate_non_raising_expectations(self):
+    def test_can_return_error_instead_of_raising(self):
         # Idea: have a good api to check expectations without raising
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
         expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
         expect(expect.returning(False).to_be(False)).equals((True, ""))
         expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
-    def test_should_hide_double_underscore_alternative_names_from_tracebacks(self):
+    def test_hides_double_underscore_alternative_names_from_tracebacks(self):
         assertion = None
         try:
             expect(3) != 3
@@ -520,7 +520,7 @@ class ExpectTest(TestCase):
         # Would like this one too, but is only hidden in py.test
         # expect(traceback).not_to.contain('self(')
     
-    def test_should_allow_not_variety_of_every_matcher_directly(self):
+    def test_not_in_path_inverts_every_matcher(self):
         expect(3).to_be(3)
         expect(3).not_to_be(2)
         expect(lambda: expect(3).not_to_be(3)) \
