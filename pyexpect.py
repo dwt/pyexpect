@@ -379,17 +379,20 @@ class expect(object):
                 # if not, we want to return True
                 return return_value
         except AssertionError as assertion:
-            if self._should_raise:
-                raise assertion
-            
+            message = self._message(assertion)
             # Support returning_expect
-            return (False, str(assertion))
+            # REFACT: change to _should_return_instead_of_raising
+            if self._should_raise:
+                raise AssertionError(message)
+            
+            return (False, message)
         
         return (True, "")
     
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
         assert assertion is self._expected_assertion_result, \
-            self._message(message_format, *message_positionals, **message_keywords)
+            message_format.format(*message_positionals, **message_keywords)
+            # self._message(message_format, *message_positionals, **message_keywords)
     
     def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
         if self._is_negative():
@@ -405,11 +408,11 @@ class expect(object):
     
     # REFACT: would be nice if the name of this method makes it clear how the 
     # message should be worded to give a good error message
-    def _message(self, message_format, *message_positionals, **message_keywords):
+    def _message(self, assertion):
+        message = re.sub(r"^AssertionError\('(.*)'\,\)",  "\1", str(assertion))
         expected = self._expected
         optional_negation = ' not ' if self._is_negative() else ' '
-        message = message_format.format(*message_positionals, **message_keywords)
-        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(
+        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(# REFACT: use locals()
             expected=expected,
             optional_negation=optional_negation,
             message=message,
@@ -462,6 +465,13 @@ from unittest import TestCase, main
 class ExpectTest(TestCase):
     
     # Meta functionality
+    
+    def test_assertion_error_from_matcher_is_enhanced(self):
+        def raise_(self):
+            raise AssertionError('sentinel')
+        expect.fnord = raise_
+        expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
+        expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
     
     def test_can_add_custom_matchers(self):
         calls = []
