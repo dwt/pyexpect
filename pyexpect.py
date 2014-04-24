@@ -167,8 +167,8 @@ class expect(object):
     falsy = falsish = falseish
     is_falseish = falseish
     
-    def includes(self, *needles):
-        for needle in needles:
+    def includes(self, needle, *additional_needles):
+        for needle in [needle] + list(additional_needles):
             self._assert(needle in self._expected, "to include {0!r}", needle)
     
     contain = contains = include = includes
@@ -650,6 +650,8 @@ class ExpectTest(TestCase):
         
         expect(lambda: expect([1,2]).to.contain(3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
         expect(lambda: expect([1,2]).to_include(2,3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
+        
+        expect(lambda: expect((1,2)).includes()).to_raise(TypeError, r"includes\(\) takes at least 2 arguments \(1 given\)")
     
     def test_has_subdict(self):
         expect(dict()).to_have.subdict()
