@@ -337,8 +337,7 @@ class expect(object):
         if name.startswith('not_') or '_not_' in name or name.endswith('_not'):
             self._expected_assertion_result = False
         
-        matcher = self._matcher_with_name(name)
-        self._prepare_matcher_for_calling(name, matcher)
+        self._prepare_matcher_for_calling(name, self._matcher_with_name(name))
         
         # Allow arbitrary chaining
         return self
