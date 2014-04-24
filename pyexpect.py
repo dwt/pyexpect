@@ -35,7 +35,7 @@ class expect(object):
     To add custom matchers, just add them as instance methods to the expect object:
     
         def my_matcher(self, arguments, defaults='something):
-            pass # whatever you have to do. For helpers and availeable values see expect()
+            pass # whatever you have to do. For helpers and availeable values see dir(expect())
         expect.new_matcher = my_matcher
     
     If you want the expectation to return a bool instead of raising go for:
@@ -110,7 +110,7 @@ class expect(object):
     # The goal is to allow the code to read sensible and as similar to the generated error message as possible.
     # Include as many alternative names as make sense.
     
-    # Right now some be_ prefixes are included as aliasses, but I'm feeling confident that I will probably phase 
+    # Right now some be_* prefixes are included as aliasses, but I will probably phase 
     # them out in favor of using arbitrary chaining to achieve their effect.
     
     # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
