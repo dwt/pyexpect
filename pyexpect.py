@@ -413,17 +413,11 @@ class expect(object):
         
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
-    # REFACT: would be nice if the name of this method makes it clear how the 
-    # message should be worded to give a good error message
     def _message(self, assertion):
-        message = re.sub(r"^AssertionError\('(.*)'\,\)",  "\1", str(assertion))
+        message = str(assertion)
         expected = self._expected
         optional_negation = ' not ' if self._is_negative() else ' '
-        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(# REFACT: use locals()
-            expected=expected,
-            optional_negation=optional_negation,
-            message=message,
-        )
+        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(**locals())
         
         if self._custom_message is not None:
             return self._custom_message.format(**locals())
@@ -478,7 +472,7 @@ class ExpectTest(TestCase):
         Used in the test suite to keep test isolation high."""
         class local_expect(expect): pass
         local_expect(1).equals(1)
-        expect(lambda: local_expect(1).equals(2)).to_raise(AssertionError, r"Expect 1 to equal 2")
+        expect(lambda: local_expect(1).equals(2)).to_raise(AssertionError, r"^Expect 1 to equal 2$")
     
     def test_can_add_custom_matchers(self):
         calls = []
