@@ -97,7 +97,11 @@ class expect(object):
     # All public methods on this class are expected to be matchers.
     # Beware the consequences if you break this promise. :)
     
-    # On naming matchers: 
+    # On writing matchers:
+    # You really only need to throw an AssertionError from the matcher and you're done.
+    # However, you should always use the self._assert* family of methods to do so, to support automatic negation.
+    
+    # On naming matchers:
     # Their name should be clear and fit in with the naming scheme of the existing matchers. 
     # That is: short and active if possible. Matcher names should fullfill two roles. 
     # They should allow direct usage, without chaining in front of them:
@@ -372,18 +376,18 @@ class expect(object):
             # REFACT: consider raising NotImplementedError
             raise AssertionError("Tried to call non existing matcher '{0}' (Patches welcome!)".format(self._selected_matcher_name))
         
-        # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
-        # Hides the actual matcher and all the methods it calls to assert stuff.
         try:
             return_value = self._selected_matcher(*args, **kwargs)
+            # allow an otherwise raising matcher to return something
+            # usefull for matchers like expect.to_raise() to return the caught exception for further analysis
             if self._should_raise:
-                # if not, we want to return True
                 return return_value
         except AssertionError as assertion:
             message = self._message(assertion)
-            # Support returning_expect
-            # REFACT: change to _should_return_instead_of_raising
+            
             if self._should_raise:
+                # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
+                # Hides the actual matcher and all the methods it calls to assert stuff.
                 raise AssertionError(message)
             
             return (False, message)
