@@ -414,7 +414,7 @@ class expect(object):
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
     def _message(self, assertion):
-        message = str(assertion)
+        message = self._message_from_assertion(assertion)
         expected = self._expected
         optional_negation = ' not ' if self._is_negative() else ' '
         assertion_message = "Expect {expected!r}{optional_negation}{message}".format(**locals())
@@ -423,6 +423,13 @@ class expect(object):
             return self._custom_message.format(**locals())
         
         return assertion_message
+    
+    def _message_from_assertion(self, assertion):
+        if sys.version < '3':
+            try: return unicode(assertion).encode('utf8')
+            except UnicodeDecodeError as ignored: pass
+        
+        return str(assertion)
     
     def _is_negative(self):
         return self._expected_assertion_result is False
@@ -492,6 +499,14 @@ class ExpectTest(TestCase):
         expect.fnord = raise_
         expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
         expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
+    
+    def test_assertion_can_contain_unicode_message(self):
+        class local_expect(expect): pass
+        local_expect.fnord = lambda self: self._assert(False, "Fnörd")
+        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1 Fnörd$")
+        
+        local_expect.fnord = lambda self: self._assert(False, u"Fnörd")
+        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1 Fnörd$")
     
     def test_error_message_when_calling_non_existing_matcher_is_good(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
