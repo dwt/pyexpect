@@ -173,7 +173,7 @@ class expect(object):
             self._assert(needle in self._expected, "to include {0!r}", needle)
     
     contain = contains = include = includes
-    does_include = to_include = includes
+    does_include = to_include = has_key = includes
     
     def within(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
@@ -656,6 +656,7 @@ class ExpectTest(TestCase):
         expect([23,42]).not_to.contain(7)
         expect(dict(foo='bar')).includes('foo')
         expect([1,2,3,4]).includes(2,3)
+        expect(dict(foo='bar')).has_key('foo')
         
         expect(lambda: expect([1,2]).to.contain(3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
         expect(lambda: expect([1,2]).to_include(2,3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
