@@ -134,6 +134,7 @@ class expect(object):
     
     def exist(self):
         self._assert(self._expected is not None, "to exist (not be None)")
+    
     exists = exist
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
@@ -392,7 +393,6 @@ class expect(object):
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
         assert assertion is self._expected_assertion_result, \
             message_format.format(*message_positionals, **message_keywords)
-            # self._message(message_format, *message_positionals, **message_keywords)
     
     def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
         if self._is_negative():
