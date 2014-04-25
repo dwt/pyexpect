@@ -539,20 +539,6 @@ class ExpectTest(TestCase):
         expect(expect.returning(False).to_be(False)).equals((True, ""))
         expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
-    def test_hides_double_underscore_alternative_names_from_tracebacks(self):
-        assertion = None
-        try:
-            expect(3) != 3
-        except AssertionError as a:
-            assertion = a
-        
-        expect(assertion) != None
-        import traceback
-        traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
-        expect(traceback).not_to.contain('_assert')
-        # Would like this one too, but is only hidden in py.test
-        # expect(traceback).not_to.contain('self(')
-    
     def test_not_in_path_inverts_every_matcher(self):
         expect(3).to_be(3)
         expect(3).not_to_be(2)
@@ -571,6 +557,18 @@ class ExpectTest(TestCase):
     
     def _test_stacktrace_does_not_contain_internal_methods(self):
         pass
+    
+    def test_hides_double_underscore_alternative_names_from_tracebacks(self):
+        assertion = None
+        try:
+            expect(3) != 3
+        except AssertionError as a:
+            assertion = a
+        
+        expect(assertion) != None
+        import traceback
+        traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
+        expect(traceback).not_to.contain('__ne__')
     
     # Matchers ##########################################################################################
     
