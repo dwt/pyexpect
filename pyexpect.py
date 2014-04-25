@@ -54,7 +54,7 @@ class expect(object):
         
         message
             can be a custom message that replaces the original message in case of error.
-            You can access the original message with the format `{assertion_message}` in 
+            You can include the original message with the format `{assertion_message}` in 
             your message. For more details see the source of self._message()
         """
         self._expected = expected
@@ -73,7 +73,7 @@ class expect(object):
         Works like the regular expect(), but instead of the error message from the matcher,
         the provided `message` will be used.
         
-        You can access the original message with the format `{assertion_message}` in 
+        You can include the original message with the format `{assertion_message}` in 
         your message. For more details see the source of self._message()
         """
         return cls(expected, message=message, should_raise=should_raise)
@@ -304,6 +304,9 @@ class expect(object):
     # TODO: consider adding is_between_exclusive
     # TODO: consider supporting slice syntax as alias. expect(3)[2:4] doesn't look natural though
     # REFACT: consider to change to be more like range(), i.e. lower bound included, upper bound excluded
+    # Alternative: add in_range that includes lower bound but excludes upper one
+    # REFACT: name could also reflect better that between actually includes both ends of the range
+    # Alternatives: in_open_range, within_half_closed_range, within_range_including_lower_bound
     def between(self, lower, higher):
         self._assert(lower <= self._expected <= higher, "to be between {0!r} and {1!r}", lower, higher)
     
@@ -443,7 +446,7 @@ class expect(object):
         def wrap(special_method_name, public_name):
             def wrapper(self, *args, **kwargs):
                 __tracebackhide__ = True  # Hide from py.test tracebacks
-                # Sadly this increases the traceback lenght by one entry :/
+                # Sadly this increases the traceback lenght by one entry for other testing frameworks :/
                 self.__getattribute__(public_name)(*args, **kwargs)
             setattr(cls, special_method_name, wrapper)
         
