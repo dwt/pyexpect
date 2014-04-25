@@ -691,7 +691,11 @@ class ExpectTest(TestCase):
         expect(lambda: expect([1,2]).to.contain(3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
         expect(lambda: expect([1,2]).to_include(2,3)).to_raise(AssertionError, r"Expect \[1, 2] to include 3")
         
-        expect(lambda: expect((1,2)).includes()).to_raise(TypeError, r"includes\(\) takes at least 2 arguments \(1 given\)")
+        native_python_error_message = r"includes\(\) missing 1 required positional argument: 'needle'"
+        if sys.version < '3':
+            native_python_error_message = r"includes\(\) takes at least 2 arguments \(1 given\)"
+        
+        expect(lambda: expect((1,2)).includes()).to_raise(TypeError, native_python_error_message)
     
     def test_has_subdict(self):
         expect(dict()).to_have.subdict()
