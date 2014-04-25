@@ -512,7 +512,7 @@ class ExpectTest(TestCase):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
             .to_raise(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'")
     
-    def test_not_is_only_allowed_on_word_boundaries(self):
+    def test_not_negates_only_if_on_word_boundaries(self):
         expect(lambda: expect(True).nothing_that_negates.is_(True)).not_.to_raise()
         expect(lambda: expect(True).annotation.to.be(True)).not_.to_raise()
         expect(lambda: expect(True).an_not_ation.to.be(True)).to_raise()
