@@ -350,12 +350,12 @@ class expect(object):
         if name.startswith('not_'):
             name = name[4:]
         
-        # hasattr on __class__ to prevent recursion from __getattribute__
-        if not hasattr(self.__class__, name):
+        # need object.__getattribute__ to prevent recursion with self.__getattribute__
+        try:
+            return object.__getattribute__(self, name)
+        except AttributeError as e:
             return None
-        
-        return object.__getattribute__(self, name)
-        
+    
     def _prepare_matcher_for_calling(self, name, matcher):
         self._selected_matcher_name = name
         self._selected_matcher = matcher
@@ -444,18 +444,18 @@ class expect(object):
             setattr(cls, special_method_name, wrapper)
         
         special_names = filter(lambda name: name.startswith('__') and name.endswith('__'), dir(cls))
-        public_matchers_by_matcher = dict()
-        for name in dir(cls):
-            # Assumes that all public methods are matchers
-            if not name.startswith('_'):
-                matcher = object.__getattribute__(cls, name)
-                public_matchers_by_matcher[matcher] = name
-        public_matchers = list(public_matchers_by_matcher.keys())
+        # Assumes that all public methods are matchers
+        matcher_names = filter(lambda name: not name.startswith('_'), dir(cls))
+        public_matcher_names_by_matcher = dict()
+        for name in matcher_names:
+            matcher = getattr(cls, name)
+            public_matcher_names_by_matcher[matcher] = name
+        matchers = list(public_matcher_names_by_matcher.keys())
         
         for special_name in special_names:
-            matcher = object.__getattribute__(cls, special_name)
-            if matcher in public_matchers:
-                public_name = public_matchers_by_matcher[matcher]
+            matcher = getattr(cls, special_name)
+            if matcher in matchers:
+                public_name = public_matcher_names_by_matcher[matcher]
                 wrap(special_name, public_name)
     
 
@@ -466,23 +466,31 @@ class ExpectTest(TestCase):
     
     # Meta functionality
     
+    def test_can_subclass_expect(self):
+        """Usefull if you want to extend expect with custom matchers without polluting the original expect()
+        Used in the test suite to keep test isolation high."""
+        class local_expect(expect): pass
+        local_expect(1).equals(1)
+        expect(lambda: local_expect(1).equals(2)).to_raise(AssertionError, r"Expect 1 to equal 2")
+    
+    def test_can_add_custom_matchers(self):
+        calls = []
+        class local_expect(expect): pass
+        local_expect.custom_matcher = lambda *arguments: calls.append(arguments)
+        
+        instance = local_expect('foo')
+        instance.custom_matcher()
+        instance.custom_matcher('bar', 'baz')
+        
+        expect(calls).to.contain((instance,))
+        expect(calls).to.contain((instance, 'bar', 'baz'))
+    
     def test_assertion_error_from_matcher_is_enhanced(self):
         def raise_(self):
             raise AssertionError('sentinel')
         expect.fnord = raise_
         expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
         expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
-    
-    def test_can_add_custom_matchers(self):
-        calls = []
-        expect.custom_matcher = lambda *arguments: calls.append(arguments)
-        
-        instance = expect('foo')
-        instance.custom_matcher()
-        instance.custom_matcher('bar', 'baz')
-        
-        expect(calls).to.contain((instance,))
-        expect(calls).to.contain((instance, 'bar', 'baz'))
     
     def test_error_message_when_calling_non_existing_matcher_is_good(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
