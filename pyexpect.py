@@ -563,8 +563,8 @@ class ExpectTest(TestCase):
         raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)
         expect(raising).to_raise(AssertionError, "division.* by zero")
     
-    def _test_missing_argument_to_expect_raises_with_good_error_message(self):
-        pass
+    def test_missing_argument_to_expect_raises_with_good_error_message(self):
+        expect(lambda: expect()).to_raise(TypeError)
     
     def _test_stacktrace_contains_matcher_as_top_level_entry(self):
         pass
