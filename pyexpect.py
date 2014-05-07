@@ -207,6 +207,11 @@ class expect(object):
     includes_dict = contains_dict = subdict = sub_dict
     have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
+    def has_attribute(self, attribute_name):
+        self._assert(hasattr(self._expected, attribute_name) is True, "to have attribute {0!r}", attribute_name)
+    hasattr = has_attr = has_attribute
+    have_attribute = have_attr = has_attribute
+    
     def to_match(self, regex):
         string_type = str if sys.version > '3' else basestring
         expect(self._expected).is_instance(string_type)
@@ -260,6 +265,11 @@ class expect(object):
     
     isinstance = instanceof = instance_of
     is_instance = is_instance_of = instance_of
+    
+    def is_subclass_of(self, a_superclass):
+        self._assert(issubclass(self._expected, a_superclass), "to be subclass of {0!r}", a_superclass)
+    
+    issubclass = is_subclass = subclass_of = subclass = is_subclass_of
     
     def is_callable(self):
         self._assert(callable(self._expected) is True, "to be callable")
@@ -821,6 +831,7 @@ class ExpectTest(TestCase):
         
         expect(lambda: expect([42]).to_have.length(23)) \
             .to_raise(AssertionError, r"Expect \[42\] to have length 23, but found length 1")
+        # TODO: should assert that out supports __len__
     
     def test_greater_than(self):
         expect(3).is_greater_than(1)
@@ -861,6 +872,18 @@ class ExpectTest(TestCase):
         expect(-3).is_not.close_to(-2, 0.5)
         
         expect(lambda: expect(10).is_.close_to(2, 3)).to_raise(AssertionError, "Expect 10 to be close to 2 with max delta 3")
+    
+    def test_hasattr(self):
+        expect(dict()).hasattr('items')
+        expect(object).not_.hasattr('fnord')
+        
+        expect(lambda: expect(object).hasattr('fnord')).to_raise(AssertionError, "Expect <(?:class|type) 'object'> to have attribute 'fnord'")
+    
+    def test_is_subclass_of(self):
+        expect(dict).is_subclass_of(object)
+        expect(dict).is_not.subclass_of(int)
+        
+        expect(lambda: expect(dict).subclass_of(int)).to_raise(AssertionError, "Expect <(?:class|type) 'dict'> to be subclass of <(?:class|type) 'int'>")
     
     def _test_increases_by(sel):
         # Not sure what the right syntax for this should be
