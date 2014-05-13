@@ -173,7 +173,7 @@ class expect(object):
     is_falseish = falseish
     
     def includes(self, needle, *additional_needles):
-        for needle in [needle] + list(additional_needles):
+        for needle in self._concatenate(needle, *additional_needles):
             self._assert(needle in self._expected, "to include {0!r}", needle)
     
     contain = contains = include = includes
@@ -182,8 +182,7 @@ class expect(object):
     def within(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
         if len(additional_atoms) > 0:
-            sequence = [sequence_or_atom]
-            sequence.extend(additional_atoms)
+            sequence = self._concatenate(sequence_or_atom, *additional_atoms)
         
         self._assert(self._expected in sequence, "is included in {0!r}", sequence)
     
@@ -260,14 +259,16 @@ class expect(object):
     
     is_empty = empty
     
-    def instance_of(self, a_class):
-        self._assert(isinstance(self._expected, a_class), "to be instance of '{0}'", a_class.__name__)
+    def instance_of(self, a_class, *additional_classes):
+        for cls in self._concatenate(a_class, *additional_classes):
+            self._assert(isinstance(self._expected, cls), "to be instance of '{0}'", a_class.__name__)
     
     isinstance = instanceof = instance_of
     is_instance = is_instance_of = instance_of
     
-    def is_subclass_of(self, a_superclass):
-        self._assert(issubclass(self._expected, a_superclass), "to be subclass of {0!r}", a_superclass)
+    def is_subclass_of(self, a_superclass, *addition_superclasses):
+        for superclass in self._concatenate(a_superclass, *addition_superclasses):
+            self._assert(issubclass(self._expected, superclass), "to be subclass of {0!r}", a_superclass)
     
     issubclass = is_subclass = subclass_of = subclass = is_subclass_of
     
@@ -281,7 +282,7 @@ class expect(object):
         self._assert(actual == a_length, "to have length {0}, but found length {1}", a_length, actual)
     
     len = count = length
-    has_count = has_length = length
+    have_length = has_count = has_length = length
     
     def greater_than(self, smaller):
         self._assert(self._expected > smaller, "to be greater than {0!r}", smaller)
@@ -443,6 +444,9 @@ class expect(object):
     
     def _is_negative(self):
         return self._expected_assertion_result is False
+    
+    def _concatenate(self, *args):
+        return args
     
     @classmethod
     def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
@@ -684,9 +688,9 @@ class ExpectTest(TestCase):
         expect('foo').in_(dict(foo='bar'))
         
         expect(lambda: expect(23).is_included_in(0,8,15)) \
-            .to_raise(AssertionError, r"Expect 23 is included in \[0, 8, 15]")
+            .to_raise(AssertionError, r"Expect 23 is included in \(0, 8, 15\)")
         expect(lambda: expect(23).is_included_in([0,8,15])) \
-            .to_raise(AssertionError, r"Expect 23 is included in \[0, 8, 15]")
+            .to_raise(AssertionError, r"Expect 23 is included in \[0, 8, 15\]")
     
     def test_includes(self):
         expect("abbracadabra").includes('cada')
@@ -813,6 +817,7 @@ class ExpectTest(TestCase):
     def test_is_instance_of(self):
         expect(dict()).is_instance(dict)
         expect("").is_instance(str)
+        expect("").is_instance(str, object)
         
         expect(lambda: expect("").instanceof(list)).to_raise(AssertionError, r"Expect '' to be instance of 'list'")
     
@@ -881,8 +886,8 @@ class ExpectTest(TestCase):
     
     def test_is_subclass_of(self):
         expect(dict).is_subclass_of(object)
+        expect(list).is_subclass_of(object, object)
         expect(dict).is_not.subclass_of(int)
-        
         expect(lambda: expect(dict).subclass_of(int)).to_raise(AssertionError, "Expect <(?:class|type) 'dict'> to be subclass of <(?:class|type) 'int'>")
     
     def _test_increases_by(sel):
