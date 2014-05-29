@@ -88,9 +88,9 @@ class expect(object):
         
         To get a callable reuseable expectation, use it like this:
         
-            an_expectation = lambda expected: expect.returning(expected).to_be('fnord')
+            an_expectation = lambda actual: expect.returning(actual).to_be('fnord')
         """
-        return cls(expected, should_raise=False, message=message)
+        return cls(actual, should_raise=False, message=message)
     
     ## Matchers #########################################################################################
     
