@@ -45,7 +45,7 @@ class expect(object):
     For more options and a list of the matchers, see the source. :)
     """
     
-    def __init__(self, expected, should_raise=True, message=None):
+    def __init__(self, actual, should_raise=True, message=None):
         """Initialize a useable assertion object that you can chain off of.
         
         should_raise=False
@@ -57,7 +57,7 @@ class expect(object):
             You can include the original message with the format `{assertion_message}` in 
             your message. For more details see the source of self._message()
         """
-        self._expected = expected
+        self._actual = actual
         self._should_raise = should_raise
         self._custom_message = message
         self._expected_assertion_result = True
@@ -67,7 +67,7 @@ class expect(object):
         self._enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives()
     
     @classmethod
-    def with_message(cls, message, expected, should_raise=True):
+    def with_message(cls, message, actual, should_raise=True):
         """Convenience method to specify a custom message to expect()
         
         Works like the regular expect(), but instead of the error message from the matcher,
@@ -76,10 +76,10 @@ class expect(object):
         You can include the original message with the format `{assertion_message}` in 
         your message. For more details see the source of self._message()
         """
-        return cls(expected, message=message, should_raise=should_raise)
+        return cls(actual, message=message, should_raise=should_raise)
     
     @classmethod
-    def returning(cls, expected, message=None):
+    def returning(cls, actual, message=None):
         """Convenience method for a non raising expect()
         
         Works like a regular expect(), but instead of raising AssertionError it returns
@@ -122,28 +122,28 @@ class expect(object):
     # `hf_unhide` is often the keyword here.
     
     def true(self):
-        self._assert(self._expected is True, "to be True")
+        self._assert(self._actual is True, "to be True")
     
     is_true = true
     
     def false(self):
-        self._assert(self._expected is False, "to be False")
+        self._assert(self._actual is False, "to be False")
     
     is_false = false
     
     def none(self):
-        self._assert(self._expected is None, "to be None")
+        self._assert(self._actual is None, "to be None")
     
     is_none = none
     
     def exist(self):
-        self._assert(self._expected is not None, "to exist (not be None)")
+        self._assert(self._actual is not None, "to exist (not be None)")
     
     exists = exist
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
     def equal(self, something):
-        self._assert(something == self._expected, "to equal {0!r}", something)
+        self._assert(something == self._actual, "to equal {0!r}", something)
     
     __eq__ = equals = equal
     to_equal = is_equal = equal
@@ -155,26 +155,26 @@ class expect(object):
     is_different = different
     
     def be(self, something):
-        self._assert(something is self._expected, "to be {0!r}", something)
+        self._assert(something is self._actual, "to be {0!r}", something)
     
     same = identical = is_ = be
     be_same = is_same = be_identical = is_identical = to_be = be
     
     def trueish(self):
-        self._assert(bool(self._expected) is True, "to be trueish")
+        self._assert(bool(self._actual) is True, "to be trueish")
     
     truthy = truish = trueish
     is_trueish = trueish
     
     def falseish(self):
-        self._assert(bool(self._expected) is False, "to be falseish")
+        self._assert(bool(self._actual) is False, "to be falseish")
     
     falsy = falsish = falseish
     is_falseish = falseish
     
     def includes(self, needle, *additional_needles):
         for needle in self._concatenate(needle, *additional_needles):
-            self._assert(needle in self._expected, "to include {0!r}", needle)
+            self._assert(needle in self._actual, "to include {0!r}", needle)
     
     contain = contains = include = includes
     does_include = to_include = has_key = includes
@@ -184,38 +184,39 @@ class expect(object):
         if len(additional_atoms) > 0:
             sequence = self._concatenate(sequence_or_atom, *additional_atoms)
         
-        self._assert(self._expected in sequence, "is included in {0!r}", sequence)
+        self._assert(self._actual in sequence, "is included in {0!r}", sequence)
     
     in_ = included_in = within
     is_within = is_included_in = within
     
     def sub_dict(self, a_subdict=None, **kwargs):
-        expect(self._expected).is_instance(dict)
+        expect(self._actual).is_instance(dict)
         
         if a_subdict is None:
             a_subdict = dict()
         a_subdict.update(kwargs)
         
-        actual_keys = a_subdict.keys()
-        actual_items = list(a_subdict.items())
-        expected_items = [(key, self._expected.get(key)) for key in actual_keys]
-        # superset = set(self._expected.iteritems())
+        expected_keys = a_subdict.keys()
+        expected_items = list(a_subdict.items())
+        actual_items = [(key, self._actual.get(key)) for key in expected_keys]
+        # superset = set(self._actual.iteritems())
         # REFACT: subset.issubset(superset)
-        self._assert(expected_items == actual_items, 'to contain dict {0!r}', a_subdict)
+        self._assert(actual_items == expected_items, 'to contain dict {0!r}', a_subdict)
     
     includes_dict = contains_dict = subdict = sub_dict
     have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
-    def has_attribute(self, attribute_name):
-        self._assert(hasattr(self._expected, attribute_name) is True, "to have attribute {0!r}", attribute_name)
+    def has_attribute(self, *attribute_names):
+        for attribute_name in attribute_names:
+            self._assert(hasattr(self._actual, attribute_name) is True, "to have attribute {0!r}", attribute_name)
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
     
     def to_match(self, regex):
         string_type = str if sys.version > '3' else basestring
-        expect(self._expected).is_instance(string_type)
+        expect(self._actual).is_instance(string_type)
         
-        self._assert(re.search(regex, self._expected) is not None, "to be matched by regex r{0!r}", regex)
+        self._assert(re.search(regex, self._actual) is not None, "to be matched by regex r{0!r}", regex)
     
     match = matching = matches = to_match
     is_matching = to_match
@@ -231,11 +232,11 @@ class expect(object):
         """
         # REFACT: consider to change to_raise to let all unexpected exceptions pass through
         # Not sure what that means to correctly implement the negative side though
-        expect(self._expected).is_callable()
+        expect(self._actual).is_callable()
         
         caught_exception = None
         try:
-            self._expected()
+            self._actual()
         except BaseException as exception:
             caught_exception = exception
         
@@ -252,61 +253,61 @@ class expect(object):
         return caught_exception
     
     throw = throwing = throws = raise_ = raising = raises = to_raise
-    is_raising = is_throwing = to_raise
+    is_raising = is_throwing = to_throw = to_raise
     
     def empty(self):
-        self._assert(len(self._expected) == 0, "to be empty")
+        self._assert(len(self._actual) == 0, "to be empty")
     
     is_empty = empty
     
     def instance_of(self, a_class, *additional_classes):
         for cls in self._concatenate(a_class, *additional_classes):
-            self._assert(isinstance(self._expected, cls), "to be instance of '{0}'", a_class.__name__)
+            self._assert(isinstance(self._actual, cls), "to be instance of '{0}'", a_class.__name__)
     
     isinstance = instanceof = instance_of
     is_instance = is_instance_of = instance_of
     
     def is_subclass_of(self, a_superclass, *addition_superclasses):
         for superclass in self._concatenate(a_superclass, *addition_superclasses):
-            self._assert(issubclass(self._expected, superclass), "to be subclass of {0!r}", a_superclass)
+            self._assert(issubclass(self._actual, superclass), "to be subclass of {0!r}", a_superclass)
     
     issubclass = is_subclass = subclass_of = subclass = is_subclass_of
     
     def is_callable(self):
-        self._assert(callable(self._expected) is True, "to be callable")
+        self._assert(callable(self._actual) is True, "to be callable")
     
     callable = is_callable
     
     def length(self, a_length):
-        actual = len(self._expected)
+        actual = len(self._actual)
         self._assert(actual == a_length, "to have length {0}, but found length {1}", a_length, actual)
     
     len = count = length
     have_length = has_count = has_length = length
     
     def greater_than(self, smaller):
-        self._assert(self._expected > smaller, "to be greater than {0!r}", smaller)
+        self._assert(self._actual > smaller, "to be greater than {0!r}", smaller)
     
     __gt__ = bigger = larger = larger_than = greater = greater_than
     is_greater_than = is_greater = greater_than
     # TODO: consider to include *_then because it's such a common error?
     
     def greater_or_equal(self, smaller_or_equal):
-        self._assert(self._expected >= smaller_or_equal, "to be greater or equal than {0!r}", smaller_or_equal)
+        self._assert(self._actual >= smaller_or_equal, "to be greater or equal than {0!r}", smaller_or_equal)
     
     __ge__ = greater_or_equal_than = greater_or_equal
     is_greater_or_equal_than = is_greater_or_equal = greater_or_equal
     # TODO: consider to include *_then because it's such a common error?
     
     def less_than(self, greater):
-        self._assert(self._expected < greater, "to be less than {0!r}", greater)
+        self._assert(self._actual < greater, "to be less than {0!r}", greater)
     
     __lt__ = smaller = smaller_than = lesser = lesser_than = less = less_than
     is_smaller_than = is_less_than = less_than
     # TODO: consider to include *_then because it's such a common error?
     
     def less_or_equal(self, greater_or_equal):
-        self._assert(self._expected <= greater_or_equal, "to be less or equal than {0!r}", greater_or_equal)
+        self._assert(self._actual <= greater_or_equal, "to be less or equal than {0!r}", greater_or_equal)
     
     __le__ = smaller_or_equal = smaller_or_equal_than = lesser_or_equal = lesser_or_equal_than = less_or_equal_than = less_or_equal
     is_smaller_or_equal = is_smaller_or_equal_than = is_less_or_equal_than = is_less_or_equal = less_or_equal
@@ -319,13 +320,13 @@ class expect(object):
     # REFACT: name could also reflect better that between actually includes both ends of the range
     # Alternatives: in_open_range, within_half_closed_range, within_range_including_lower_bound
     def between(self, lower, higher):
-        self._assert(lower <= self._expected <= higher, "to be between {0!r} and {1!r}", lower, higher)
+        self._assert(lower <= self._actual <= higher, "to be between {0!r} and {1!r}", lower, higher)
     
     within_range = between
     is_within_range = is_between = between
     
     def close_to(self, actual, max_delta):
-        self._assert((actual - max_delta) <= self._expected <= (actual + max_delta), "to be close to {0!r} with max delta {1!r}", actual, max_delta)
+        self._assert((actual - max_delta) <= self._actual <= (actual + max_delta), "to be close to {0!r} with max delta {1!r}", actual, max_delta)
     
     about_equals = about_equal = about = almost_equals = almost_equal = close = close_to
     is_about =  is_almost_equal = is_close = is_close_to = close_to
@@ -426,9 +427,9 @@ class expect(object):
     
     def _message(self, assertion):
         message = self._message_from_assertion(assertion)
-        expected = self._expected
+        actual = self._actual
         optional_negation = ' not ' if self._is_negative() else ' '
-        assertion_message = "Expect {expected!r}{optional_negation}{message}".format(**locals())
+        assertion_message = "Expect {actual!r}{optional_negation}{message}".format(**locals())
         
         if self._custom_message is not None:
             return self._custom_message.format(**locals())
@@ -480,6 +481,7 @@ class expect(object):
                 public_name = public_matcher_names_by_matcher[matcher]
                 wrap(special_name, public_name)
     
+
 
 ## Unit Tests ###########################################################################################
 
@@ -538,8 +540,8 @@ class ExpectTest(TestCase):
         expect(messaging('fnord')).to_raise(AssertionError, r"^fnord$")
         expect(messaging('fnord <{assertion_message}> fnord')) \
             .to_raise(AssertionError, r"^fnord <Expect True not to be True> fnord$")
-        expect(messaging('{expected}-{optional_negation}')).to_raise(AssertionError, r"^True- not $")
-        expect(messaging('{expected}')).to_raise(AssertionError, r"^True$")
+        expect(messaging('{actual}-{optional_negation}')).to_raise(AssertionError, r"^True- not $")
+        expect(messaging('{actual}')).to_raise(AssertionError, r"^True$")
         
         expect(lambda: expect.with_message('fnord', True).to.be(False)) \
             .to_raise(AssertionError, r"^fnord$")

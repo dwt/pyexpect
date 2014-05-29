@@ -80,7 +80,7 @@ Glad you ask! Here you go
     
         def falseish(self):
             # See expect() source for availeable helpers
-            self._assert(bool(self._expected) is False, "to be falseish")
+            self._assert(bool(self._actual) is False, "to be falseish")
         expect.is_falsish = expect.is_falseish = expect.falsish = expect.falseish = falseish
     
     Done!
@@ -149,7 +149,7 @@ Glad you ask! Here you go
     
         from pyexpect import expect
         def something(self):
-            self._assert(self._expected == 'something', "to be 'something'")
+            self._assert(self._actual == 'something', "to be 'something'")
         expect.something = something
         
         from unittest import TestCase, main
