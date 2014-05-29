@@ -401,9 +401,9 @@ class expect(object):
             message = self._message(assertion)
             
             if self._should_raise:
+                raise AssertionError(message)
                 # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
                 # Hides the actual matcher and all the methods it calls to assert stuff.
-                raise AssertionError(message)
             
             return (False, message)
         
