@@ -113,7 +113,7 @@ Glad you ask! Here you go
 
 1.  Great error messages: pyexpect takes great care to ensure every aspect of experiencing an error is as concise and usefull as possible. All error messages have the same format that always starts with what is expected and then is customized by the matcher to pack as much information as possible.
     
-        expect(23).not_to_equal(23)
+        expect(23).not_.to_equal(23)
         Expect 23 not to equal 23
     
     If you write your own assertion methods to enhance your unit testing, it's quite easy to get long stack traces because the actuall assertion happens some stack frames down in one of the called matchers.
