@@ -13,7 +13,9 @@
 # - get build server + button on bitbucket
 # - get coverage + button on bitbucket
 # - get documentation + button on bitbucket
-# Improve py3 support - shorten exception stack traces
+# - Improve py3 support - shorten exception stack traces
+# - allow subexpects, i.e. matchers that are implemented in terms of other matchers
+# - allow adding negation as a parameter to expect
 
 __all__ = ['expect']
 
@@ -92,6 +94,34 @@ class expect(object):
         """
         return cls(actual, should_raise=False, message=message)
     
+    ## Compatibility with other expectation packages ####################################################
+    
+    @classmethod
+    def enable_jasmine_compatibility(cls):
+        # defined is not really a concept that maps well to python
+        cls.to_be_defined = cls.exists
+        cls.to_be_undefined = cls.is_none
+        cls.to_be_null = cls.is_none
+        cls.to_be_truthy = cls.is_truthy
+        cls.to_be_falsy = cls.is_falsy
+        cls.to_contain = cls.contains
+        cls.to_be_less_than = cls.less_than
+        cls.to_be_greater_than = cls.greater_than
+        
+        def to_be_close_to(self, expected, max_delta=0.001, precision=None):
+            """\
+            max_delta defaults to 0.001 which emulates jasmines default precision of 2
+            Should you want to work with precisions instead of deltas, you need to specify
+            that explicitly.
+            """
+            if precision is None:
+                return self.close_to(expected, max_delta=max_delta)
+            else:
+                max_delta = (10.0 ** -precision) / 2
+                actual_delta = abs(expected - self._actual)
+                self._assert(actual_delta < max_delta, "to be close to {0!r} with {1!r} matching digits (actual_delta={2!r}, expected_delta={3!r})", expected, precision, actual_delta, max_delta)
+        cls.to_be_close_to = to_be_close_to
+    
     ## Matchers #########################################################################################
     
     # All public methods on this class are expected to be matchers.
@@ -165,19 +195,21 @@ class expect(object):
     
     truthy = truish = trueish
     is_trueish = trueish
+    is_truthy = truthy
     
     def falseish(self):
         self._assert(bool(self._actual) is False, "to be falseish")
     
     falsy = falsish = falseish
     is_falseish = falseish
+    is_falsy = falsy
     
     def includes(self, needle, *additional_needles):
         for needle in self._concatenate(needle, *additional_needles):
             self._assert(needle in self._actual, "to include {0!r}", needle)
     
     contain = contains = include = includes
-    does_include = to_include = has_key = includes
+    to_contain = does_include = to_include = has_key = includes
     
     def within(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
@@ -325,8 +357,8 @@ class expect(object):
     within_range = between
     is_within_range = is_between = between
     
-    def close_to(self, actual, max_delta):
-        self._assert((actual - max_delta) <= self._actual <= (actual + max_delta), "to be close to {0!r} with max delta {1!r}", actual, max_delta)
+    def close_to(self, expected, max_delta):
+        self._assert((expected - max_delta) <= self._actual <= (expected + max_delta), "to be close to {0!r} with max delta {1!r}", expected, max_delta)
     
     about_equals = about_equal = about = almost_equals = almost_equal = close = close_to
     is_about =  is_almost_equal = is_close = is_close_to = close_to
@@ -547,6 +579,19 @@ class ExpectTest(TestCase):
             .to_raise(AssertionError, r"^fnord$")
         
         # TODO: allow partially formatted messages from expect.with_message
+        # Problem: the custom message is again piped through format, which breaks if 
+        # the message contains user input
+        # Probably needs two ways to hand in a message, one that is ok to format upon and one that is not
+        # Consider api changes
+        # expect.with_message('fnord')(3) == 3
+        # expect(3).with_message('fnord') == 3
+        # expect.with_message('fnord').that(3) == 3
+        # expect(3).equals(3).with_message('fnord')
+        # expect(3).equals(3, message='fnord')
+        # expect(3, message='fnord', should_raise=False) == 3
+        # expect(3, with_message='fnord') == 3
+        # local_expect = expect.with_message('fnord')
+        # local_expect(3) == 3
     
     def test_can_return_error_instead_of_raising(self):
         # Idea: have a good api to check expectations without raising
@@ -901,6 +946,89 @@ class ExpectTest(TestCase):
         # expect(increaser, accessor).increases_by(a_number)
         pass
     
+
+    # Jasmine compatibility ##########################################################
+    # See: https://github.com/pivotal/jasmine/
+    
+    def test_can_activate_jasmine_compatibility(self):
+        # see http://jasmine.github.io/edge/introduction.html for matcher examples
+        expect.enable_jasmine_compatibility()
+        
+        a = object()
+        expect(a).to_be(a)
+        expect("foo").not_.to_be(None)
+        expect(object()).not_.to_be(object())
+        
+        expect(12).to_equal(12)
+        expect(dict(a=12, b=34)).to_equal(dict(a=12, b=34))
+        
+        message = "foo bar baz"
+        expect(message).to_match(r"bar")
+        expect(message).to_match("bar")
+        expect(message).not_.to_match(r"quux")
+        
+        # not really equivalent, as python throws if you access undefined attributes
+        defined = "defined"
+        expect(defined).to_be_defined()
+        
+        # same problem
+        expect(defined).not_.to_be_undefined()
+        expect(None).to_be_undefined()
+        
+        expect(None).to_be_null()
+        
+        expect("foo").to_be_truthy()
+        expect(dict()).not_.to_be_truthy()
+        expect(None).to_be_falsy()
+        expect([]).to_be_falsy()
+        expect("").to_be_falsy()
+        expect(tuple()).to_be_falsy()
+        expect("foo").not_.to_be_falsy()
+        
+        array = ["foo", "bar", "baz"]
+        expect(array).to_contain("bar")
+        expect(array).not_.to_contain("quux")
+        
+        from math import e, pi
+        expect(e).to_be_less_than(pi)
+        expect(pi).not_.to_be_less_than(e)
+        expect(pi).to_be_greater_than(e)
+        expect(e).not_.to_be_greater_than(pi)
+        
+        # to_be_close_to differs from close_to in py_expect as it wants a precision argument
+        # that specifies how many digits in the number should be identical. 
+        # I find this highly annoying, as was not at all easy to use and quite hard to 
+        # read and reason about after the fact. Especially as floats / doubles can have 
+        # surprising internal representations.
+        # Solution: Support the API but not by default. By default, the second parameter 
+        # is assumed to be a max_delta which is much easier to reason about.
+        expect(0).to_be_close_to(0)
+        expect(1).to_be_close_to(0.5, 0.6)
+        
+        # precision argument (by default ignored)
+        # round expected to n digits after the comma and then compare
+        expect(pi).not_.to_be_close_to(e, precision=2)
+        # expect(pi).to_be_close_to(e, 0)
+        expect(pi).not_.to_be_close_to(e, precision=1)
+        
+        expect(1).to_be_close_to(1.001, precision=2)
+        expect(2).not_.to_be_close_to(2.01, precision=2)
+        expect(0).to_be_close_to(0.1, precision=0)
+        expect(3).to_be_close_to(3.1, precision=0)
+        expect(1).to_be_close_to(1.0001, precision=3)
+        expect(1.23).to_be_close_to(1.229, precision=2)
+        expect(1.23).to_be_close_to(1.226, precision=2)
+        expect(1.23).to_be_close_to(1.225, precision=2)
+        expect(1.23).not_.to_be_close_to(1.2249999, precision=2)
+        expect(1.23).to_be_close_to(1.234, precision=2)
+        
+        def throws(): raise ArithmeticError()
+        expect(throws).to_throw()
+        expect(lambda: 3).not_.to_throw()
+        
+        
+        
+        
 
 if __name__ == '__main__':
     main()
