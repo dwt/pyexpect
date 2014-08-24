@@ -3,7 +3,7 @@
 
 """
 # Release checklist:
-- Tests run at least in python 2.7 and 3.3
+- Tests run at least in python 2.7 and 3.4
 - Ensure pandoc is installed (to get nicer readme output for pypi)
 - Increment version and tag
 - upload new build with $ ./setup.py sdist upload
