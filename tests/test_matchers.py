@@ -322,3 +322,9 @@ class MatcherTest(TestCase):
         # expect(increaser, accessor).increases_by(a_number)
         pass
     
+    def test_starts_with(self):
+        pass
+    
+    def test_ends_with(self):
+        pass
+    
