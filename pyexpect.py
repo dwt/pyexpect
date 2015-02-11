@@ -221,6 +221,7 @@ class expect(object):
     in_ = included_in = within
     is_within = is_included_in = within
     
+    # REFACT: Error message is hard to read., needs formatting on multiple lines, or restriction to just the keys in question.
     def sub_dict(self, a_subdict=None, **kwargs):
         expect(self._actual).is_instance(dict)
         
@@ -252,6 +253,14 @@ class expect(object):
     
     match = matching = matches = to_match
     is_matching = to_match
+    
+    def to_start_with(self, expected_start):
+        self._assert(self._actual.startswith(expected_start), "to start with {0!r}", expected_start)
+    starts_with = startswith = to_start_with
+    
+    def to_end_with(self, expected_end):
+        self._assert(self._actual.endswith(expected_end), "to end with {0!r}", expected_end)
+    ends_with = endswith = to_end_with
     
     # TODO: consider with statement support to allow code like this
     # with expect.raises(AssertionError):

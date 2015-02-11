@@ -323,8 +323,21 @@ class MatcherTest(TestCase):
         pass
     
     def test_starts_with(self):
-        pass
+        expect('fnordfoo').starts_with('fnord')
+        # expect(['foo', 'bar']).starts_with('foo')
+        expect(lambda: expect('fnord').starts_with('bar')).to_raise(
+            AssertionError, "Expect 'fnord' to start with 'bar'"
+        )
     
     def test_ends_with(self):
+        expect('fnordfoo').ends_with('foo')
+        # expect(['foo', 'bar']).ends_with('foo')
+        expect(lambda: expect('fnord').ends_with('bar')).to_raise(
+            AssertionError, "Expect 'fnord' to end with 'bar'"
+        )
+    
+    def test_has_key(self):
         pass
     
+    def test_has_subset(self):
+        pass
