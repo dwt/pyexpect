@@ -1,5 +1,10 @@
 from unittest import TestCase
 from pyexpect import expect
+from pyexpect.jasmine_js_compatibility import add_jasmine_js_matchers
+
+class expect(expect):
+    pass
+add_jasmine_js_matchers(expect)
 
 class JasmineMatcherNameCompatibilityTest(TestCase):
 
@@ -8,8 +13,6 @@ class JasmineMatcherNameCompatibilityTest(TestCase):
     
     def test_can_activate_jasmine_compatibility(self):
         # see http://jasmine.github.io/edge/introduction.html for matcher examples
-        expect.enable_jasmine_compatibility()
-        
         a = object()
         expect(a).to_be(a)
         expect("foo").not_.to_be(None)
