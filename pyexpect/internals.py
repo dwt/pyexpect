@@ -80,8 +80,7 @@ class ExpectMetaMagic(object):
         __tracebackhide__ = True  # Hide from py.test tracebacks
         
         if self._selected_matcher is None:
-            # REFACT: consider raising NotImplementedError
-            raise AssertionError("Tried to call non existing matcher '{0}' (Patches welcome!)".format(self._selected_matcher_name))
+            raise NotImplementedError("Tried to call non existing matcher '{0}' (Patches welcome!)".format(self._selected_matcher_name))
         
         try:
             return_value = self._selected_matcher(*args, **kwargs)

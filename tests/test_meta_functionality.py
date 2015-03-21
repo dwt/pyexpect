@@ -46,7 +46,7 @@ class MetaFunctionalityTest(TestCase):
     
     def test_error_message_when_calling_non_existing_matcher_is_good(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
-            .to_raise(AssertionError, r"Tried to call non existing matcher 'nonexisting_matcher'")
+            .to_raise(NotImplementedError, r"Tried to call non existing matcher 'nonexisting_matcher'")
     
     def test_not_negates_only_if_on_word_boundaries(self):
         expect(lambda: expect(True).nothing_that_negates.is_(True)).not_.to_raise()
