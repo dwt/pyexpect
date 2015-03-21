@@ -104,7 +104,7 @@ class MetaFunctionalityTest(TestCase):
         expect(lambda: expect()).to_raise(TypeError)
     
     def test_should_not_add_extra_backtrace_of_causing_exception_in_python_3(self):
-        if 3 != sys.version_info[0]:
+        if sys.version < '3':
             return # only a problem in python 3
         
         formatted = None

@@ -249,10 +249,12 @@ class expect(ExpectMetaMagic):
         expect(self._actual).is_callable()
         
         caught_exception = None
+        traceback = None
         try:
             self._actual()
         except BaseException as exception:
             caught_exception = exception
+            _, _, traceback = sys.exc_info()
         
         is_right_class = isinstance(caught_exception, exception_class)
         if message_regex is None:
@@ -263,6 +265,12 @@ class expect(ExpectMetaMagic):
             self._assert(is_right_class and has_matching_message, 
                 "to raise {0} with message matching:\n\tr'{1}'\nbut it raised:\n\t{2!r}", 
                 exception_class.__name__, message_regex, caught_exception)
+        
+        if self._is_negative() and caught_exception:
+            if sys.version < '3':
+                exec("raise caught_exception, None, traceback")
+            else:
+                raise caught_exception
         
         return caught_exception
     

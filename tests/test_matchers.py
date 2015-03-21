@@ -183,7 +183,7 @@ class MatcherTest(TestCase):
         # simple positive
         expect(raiser).to_raise()
         expect(raiser).to_raise(TestException)
-        expect(raiser).to_raise(TestException, r'test_[ent]xception') # regex
+        expect(raiser).to_raise(TestException, r'test_[ent]xception') # regex support
         
         # simple negative
         expect(lambda:None).not_to.raise_()
@@ -192,35 +192,50 @@ class MatcherTest(TestCase):
         
         # expected but not raising
         expect(lambda: expect(lambda:None).to_raise()) \
-            .to_raise(AssertionError, r">\s*to raise Exception but it raised:\n\tNone")
+            .to_raise(AssertionError, r">\s*to raise Exception but it raised:\s*None")
         # raising unexpected
-        expect(lambda: expect(raiser).not_to.raise_()) \
-            .to_raise(AssertionError, r">\s*not to raise Exception but it raised:\n\tTestException\('test_exception',\)$")
-        expect(lambda: expect(raiser).not_to.raise_(TestException)) \
-            .to_raise(AssertionError, r">\s*not to raise TestException but it raised:\n\tTestException\('test_exception',\)$")
-        expect(lambda: expect(raiser).not_to.raise_(TestException, r"^test_exception$")) \
-            .to_raise(AssertionError, r">\s*not to raise TestException with message matching:\n\tr'\^test_exception\$'\nbut it raised:\n\tTestException\('test_exception',\)$")
+        expect(lambda: expect(raiser).not_to.raise_()).to_raise(AssertionError,
+            r">\s*not to raise Exception but it raised:\s*TestException\('test_exception',\)$")
+        expect(lambda: expect(raiser).not_to.raise_(TestException)).to_raise(AssertionError,
+            r">\s*not to raise TestException but it raised:\n\tTestException\('test_exception',\)$")
+        expect(lambda: expect(raiser).not_to.raise_(TestException, r"^test_exception$")).to_raise(AssertionError,
+            r">\s*not to raise TestException with message matching:\n\tr'\^test_exception\$'\nbut it raised:\n\tTestException\('test_exception',\)$")
             
         # raising right exception, wrong message
-        expect(lambda: expect(raiser).to_raise(TestException, r'fnord')) \
-            .to_raise(AssertionError, r">\s*to raise TestException with message matching:\n\tr'fnord'\nbut it raised:\n\tTestException\('test_exception',\)$")
-        
-        # negative raises different (swallowed)
-        expect(lambda: expect(raiser).not_to.raise_(ArithmeticError)).not_.to_raise()
-        # negative raise correct but wrong message (swallowed)
-        expect(lambda: expect(raiser).not_to.raise_(TestException, r'fnord')).not_.to_raise()
-        # negative raise wrong exception but right messagge (swallowed)
-        expect(lambda: expect(raiser).not_to.raise_(ArithmeticError, r'test_exception')).not_.to_raise()
-        # wrong exception, wrong message (swallowed)
-        expect(lambda: expect(raiser).not_.to_raise(NameError, r'fnord')).not_.to_raise()
+        expect(lambda: expect(raiser).to_raise(TestException, r'fnord')).to_raise(AssertionError, 
+            r">\s*to raise TestException with message matching:\n\tr'fnord'\nbut it raised:\n\tTestException\('test_exception',\)$")
         
         # Can catch exceptions that do not inherit from Exception to ensure everything is testable
         expect(lambda: sys.exit('gotcha')).to_raise(SystemExit)
         
-        # Return caught exception
+        # Returns caught exception
         exception = expect(raiser).to_raise(TestException)
         expect(exception).is_instance_of(TestException)
         expect(str(exception)).matches('test_exception')
+    
+    def test_raises_doesnt_swallow_exception_when_in_not_mode(self):
+        class TestException(Exception): pass
+        def raiser(): raise TestException('test_exception')
+        
+        # negative raises different
+        expect(lambda: expect(raiser).not_to.raise_(ArithmeticError)).to_raise(TestException, r"test_exception")
+        # negative raise correct but wrong message
+        expect(lambda: expect(raiser).not_to.raise_(TestException, r'fnord')).to_raise(TestException, r"test_exception")
+        # negative raise wrong exception but right messagge
+        expect(lambda: expect(raiser).not_to.raise_(ArithmeticError, r'test_exception')).to_raise(TestException, r"test_exception")
+        # wrong exception, wrong message
+        expect(lambda: expect(raiser).not_.to_raise(NameError, r'fnord')).to_raise(TestException, r"test_exception")
+        
+        exception = backtrace = None
+        try:
+            expect(raiser).not_to.raise_(ArithmeticError)
+        except TestException as e:
+            exception = e
+            _, _, backtrace = sys.exc_info()
+        
+        import traceback
+        backtrace = traceback.extract_tb(backtrace)
+        expect(backtrace[-1]).to_contain('raiser')
     
     def test_empty(self):
         expect("").is_empty()

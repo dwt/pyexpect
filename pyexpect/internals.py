@@ -9,7 +9,7 @@ def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
         try:
             return method_to_be_wrapped(*args, **kwargs)
         except AssertionError as exception:
-            is_python3 = sys.version_info[0] == 3
+            is_python3 = sys.version > '3'
             if is_python3:
                 # Get rid of the link to the causing exception as it greatly cluttes the error message
                 exception.__cause__ = None
