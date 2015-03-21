@@ -74,46 +74,20 @@ class ExpectMeta(object):
             message = self._message(assertion)
             
             if self._should_raise:
-                # _, _, exception_traceback = sys.exc_info()
-                # exception_traceback = self._traceback_with_last_call_before_expect_on_stack()
-                # exception_traceback = None
-                # exc = AssertionError(message)
-                # exc.with_traceback(None)
-                # exc.__cause__ = None
-                # raise exc
-                self._raise_with_traceback(AssertionError(message), traceback=None, cause_exception=None)
                 # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
                 # Hides the actual matcher and all the methods it calls to assert stuff.
+                # Sadly there seems to be no better way to controll exception stack traces.
+                # If you have a good idea how to improve this, please tell me!
+                exception = AssertionError(message)
+                is_python3 = sys.version_info[0] == 3
+                if is_python3: # 3 most likely
+                    # Get rid of the link to the causing exception as it greatly cluttes the error message
+                    exception.__cause__ = None
+                raise exception
             
             return (False, message)
         
         return (True, "")
-    
-    
-    def _raise_with_traceback(self, exc, traceback=Ellipsis, cause_exception=None):
-        """Emulates python 3's
-            raise some_exception.with_traceback(a_custom_traceback) from cause_exception
-        """
-        PY2 = sys.version_info[0] == 2
-        if PY2:
-            exec('''
-def raise_with_traceback(exc, traceback=Ellipsis, cause_exception=None):
-    if traceback == Ellipsis:
-        _, _, traceback = sys.exc_info()
-    raise exc, None, traceback
-self._raise_with_traceback = raise_with_traceback
-'''.strip())
-        else:
-            exec('''
-def raise_with_traceback(exc, traceback=Ellipsis, cause_exception=None):
-    if traceback == Ellipsis:
-        _, _, traceback = sys.exc_info()
-    exc.with_traceback(traceback).__cause__ = cause_exception
-    raise exc
-self._raise_with_traceback = raise_with_traceback
-'''.strip())
-        
-        self._raise_with_traceback(exc, traceback, cause_exception)
     
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
         assert assertion is self._expected_assertion_result, \
