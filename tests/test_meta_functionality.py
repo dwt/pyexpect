@@ -1,7 +1,8 @@
 # encoding: utf8
 
-from unittest import TestCase
 from pyexpect import expect
+from unittest import TestCase
+import sys
 
 class MetaFunctionalityTest(TestCase):
     
@@ -100,11 +101,27 @@ class MetaFunctionalityTest(TestCase):
     def test_missing_argument_to_expect_raises_with_good_error_message(self):
         expect(lambda: expect()).to_raise(TypeError)
     
+    def test_should_not_add_extra_backtrace_of_causing_exception_in_python_3(self):
+        if 3 != sys.version_info[0]:
+            return # only a problem in python 3
+        
+        formatted = None
+        try: expect(1).equals(2)
+        except AssertionError as error:
+            import traceback
+            formatted = traceback.format_exc()
+        
+        expect(formatted).not_to_contain("During handling of the above exception, another exception occurred")
+    
     def _test_stacktrace_contains_matcher_as_top_level_entry(self):
-        pass
+        # Standard, should only contain __call__ as top level entry
+        expect(1).equals(2)
+        # Some extra caution required as the wrapper should not really be there / be the top
+        expect(1) == 2
     
     def _test_stacktrace_does_not_contain_internal_methods(self):
-        pass
+        pass # hide them even better! Consider temporarily changing the name of the top method to the matcher?
+        # Consider moving this to a special wrapper that does this so the normal code is undisturbed?
     
     def test_hides_double_underscore_alternative_names_from_tracebacks(self):
         import sys
