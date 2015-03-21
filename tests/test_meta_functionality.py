@@ -6,8 +6,6 @@ import sys
 
 class MetaFunctionalityTest(TestCase):
     
-    # Meta functionality
-    
     def test_can_subclass_expect(self):
         """Usefull if you want to extend expect with custom matchers without polluting the original expect()
         Used in the test suite to keep test isolation high."""
@@ -15,7 +13,7 @@ class MetaFunctionalityTest(TestCase):
             def local_matcher(self, arg):
                 self._assert(self._actual == 1, "got " + arg)
         local_expect(1).local_matcher('one')
-        expect(lambda: local_expect(2).local_matcher('two')).to_raise(AssertionError, r"^Expect 2\ngot two$")
+        expect(lambda: local_expect(2).local_matcher('two')).to_raise(AssertionError, r"^Expect 2 got two$")
     
     def test_can_add_custom_matchers(self):
         calls = []
@@ -33,16 +31,20 @@ class MetaFunctionalityTest(TestCase):
         def raise_(self):
             raise AssertionError('sentinel')
         expect.fnord = raise_
-        expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1\nsentinel")
-        expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1\nnot sentinel")
+        expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
+        expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
+    
+    def test_wrap_really_long_error_messages_to_make_them_easier_to_rad(self):
+        error = expect(lambda: expect("really_long " * 50).to_equal('something shorter')).to_raise()
+        expect(str(error)).to_match(r'\n\nto equal ')
     
     def test_assertion_can_contain_unicode_message(self):
         class local_expect(expect): pass
         local_expect.fnord = lambda self: self._assert(False, "Fnörd")
-        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1\nFnörd$")
+        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1 Fnörd$")
         
         local_expect.fnord = lambda self: self._assert(False, u"Fnörd")
-        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1\nFnörd$")
+        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1 Fnörd$")
     
     def test_error_message_when_calling_non_existing_matcher_is_good(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
@@ -59,7 +61,7 @@ class MetaFunctionalityTest(TestCase):
             return lambda: expect(True, message=message).not_.to_be(True)
         expect(messaging('fnord')).to_raise(AssertionError, r"^fnord$")
         expect(messaging('fnord <{assertion_message}> fnord')) \
-            .to_raise(AssertionError, r"^fnord <Expect True\nnot to be True> fnord$")
+            .to_raise(AssertionError, r"^fnord <Expect True not to be True> fnord$")
         expect(messaging('{actual}-{optional_negation}')).to_raise(AssertionError, r"^True-not $")
         expect(messaging('{actual}')).to_raise(AssertionError, r"^True$")
         
@@ -86,13 +88,13 @@ class MetaFunctionalityTest(TestCase):
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
         expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
         expect(expect.returning(False).to_be(False)).equals((True, ""))
-        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False\nto be True"))
+        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
     
     def test_not_in_path_inverts_every_matcher(self):
         expect(3).to_be(3)
         expect(3).not_to_be(2)
         expect(lambda: expect(3).not_to_be(3)) \
-            .to_raise(AssertionError, r"^Expect 3\nnot to be 3$")
+            .to_raise(AssertionError, r"^Expect 3 not to be 3$")
         
         expect(lambda: None).not_to_raise(AssertionError)
         raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)
@@ -162,5 +164,3 @@ class MetaFunctionalityTest(TestCase):
         traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
         expect(traceback).not_to.contain('__ne__')
     
-# hide them even better! Consider temporarily changing the name of the top method to the matcher? could make the exception nicer?
-# Consider moving this to a special wrapper that does this so the normal code is undisturbed?

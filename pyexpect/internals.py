@@ -89,6 +89,7 @@ class ExpectMetaMagic(object):
             if self._should_raise:
                 return return_value
         except AssertionError as assertion:
+            # REFACT: consider to do this when creating the assertion as that's the most logical place to look for it
             message = self._message(assertion)
             
             if self._should_raise:
@@ -115,11 +116,12 @@ class ExpectMetaMagic(object):
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
     def _message(self, assertion):
-        # REFACT: consider to add the newline before optional_negation only if the actual was above a specific length?
         message = self._message_from_assertion(assertion)
-        actual = self._actual
+        actual = repr(self._actual)
+        # using two newlines to make it easier to find on a terminal
+        optional_newline = '\n\n' if len(actual) > 30 else ' '
         optional_negation = 'not ' if self._is_negative() else ''
-        assertion_message = "Expect {actual!r}\n{optional_negation}{message}".format(**locals())
+        assertion_message = "Expect {actual}{optional_newline}{optional_negation}{message}".format(**locals())
         
         if self._custom_message is not None:
             return self._custom_message.format(**locals())
