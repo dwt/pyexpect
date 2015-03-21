@@ -10,9 +10,11 @@ class MetaFunctionalityTest(TestCase):
     def test_can_subclass_expect(self):
         """Usefull if you want to extend expect with custom matchers without polluting the original expect()
         Used in the test suite to keep test isolation high."""
-        class local_expect(expect): pass
-        local_expect(1).equals(1)
-        expect(lambda: local_expect(1).equals(2)).to_raise(AssertionError, r"^Expect 1 to equal 2$")
+        class local_expect(expect):
+            def local_matcher(self, arg):
+                self._assert(self._actual == 1, "got " + arg)
+        local_expect(1).local_matcher('one')
+        expect(lambda: local_expect(2).local_matcher('two')).to_raise(AssertionError, r"^Expect 2\ngot two$")
     
     def test_can_add_custom_matchers(self):
         calls = []
@@ -30,16 +32,16 @@ class MetaFunctionalityTest(TestCase):
         def raise_(self):
             raise AssertionError('sentinel')
         expect.fnord = raise_
-        expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
-        expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
+        expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1\nsentinel")
+        expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1\nnot sentinel")
     
     def test_assertion_can_contain_unicode_message(self):
         class local_expect(expect): pass
         local_expect.fnord = lambda self: self._assert(False, "Fnörd")
-        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1 Fnörd$")
+        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1\nFnörd$")
         
         local_expect.fnord = lambda self: self._assert(False, u"Fnörd")
-        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1 Fnörd$")
+        expect(lambda: local_expect(1).fnord()).to_raise(AssertionError, r"^Expect 1\nFnörd$")
     
     def test_error_message_when_calling_non_existing_matcher_is_good(self):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
@@ -56,8 +58,8 @@ class MetaFunctionalityTest(TestCase):
             return lambda: expect(True, message=message).not_.to_be(True)
         expect(messaging('fnord')).to_raise(AssertionError, r"^fnord$")
         expect(messaging('fnord <{assertion_message}> fnord')) \
-            .to_raise(AssertionError, r"^fnord <Expect True not to be True> fnord$")
-        expect(messaging('{actual}-{optional_negation}')).to_raise(AssertionError, r"^True- not $")
+            .to_raise(AssertionError, r"^fnord <Expect True\nnot to be True> fnord$")
+        expect(messaging('{actual}-{optional_negation}')).to_raise(AssertionError, r"^True-not $")
         expect(messaging('{actual}')).to_raise(AssertionError, r"^True$")
         
         expect(lambda: expect.with_message('fnord', True).to.be(False)) \
@@ -83,13 +85,13 @@ class MetaFunctionalityTest(TestCase):
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
         expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
         expect(expect.returning(False).to_be(False)).equals((True, ""))
-        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
+        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False\nto be True"))
     
     def test_not_in_path_inverts_every_matcher(self):
         expect(3).to_be(3)
         expect(3).not_to_be(2)
         expect(lambda: expect(3).not_to_be(3)) \
-            .to_raise(AssertionError, r"^Expect 3 not to be 3$")
+            .to_raise(AssertionError, r"^Expect 3\nnot to be 3$")
         
         expect(lambda: None).not_to_raise(AssertionError)
         raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)

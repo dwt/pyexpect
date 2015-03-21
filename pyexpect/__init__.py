@@ -175,7 +175,7 @@ class expect(ExpectMetaMagic):
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
     def equal(self, something):
-        self._assert(something == self._actual, "\nto equal {0!r}", something)
+        self._assert(something == self._actual, "to equal {0!r}", something)
     
     __eq__ = equals = equal
     to_equal = is_equal = equal
@@ -236,7 +236,7 @@ class expect(ExpectMetaMagic):
         actual_items = [(key, self._actual.get(key)) for key in expected_keys]
         # superset = set(self._actual.iteritems())
         # REFACT: subset.issubset(superset)
-        self._assert(actual_items == expected_items, '\nto contain dict {0!r}', a_subdict)
+        self._assert(actual_items == expected_items, 'to contain dict {0!r}', a_subdict)
     
     includes_dict = contains_dict = subdict = sub_dict
     have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict

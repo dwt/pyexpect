@@ -108,8 +108,8 @@ class ExpectMetaMagic(object):
     def _message(self, assertion):
         message = self._message_from_assertion(assertion)
         actual = self._actual
-        optional_negation = ' not ' if self._is_negative() else ' '
-        assertion_message = "Expect {actual!r}{optional_negation}{message}".format(**locals())
+        optional_negation = 'not ' if self._is_negative() else ''
+        assertion_message = "Expect {actual!r}\n{optional_negation}{message}".format(**locals())
         
         if self._custom_message is not None:
             return self._custom_message.format(**locals())
