@@ -1,6 +1,6 @@
 import sys
 
-class ExpectMeta(object):
+class ExpectMetaMagic(object):
     
     ## Internals ########################################################################################
     # REFACT: consider to find a way to separate them better from the matchers. Maybe move to a different

@@ -20,9 +20,9 @@
 __all__ = ['expect']
 
 import re, sys
-from .internals import ExpectMeta
+from .internals import ExpectMetaMagic
 
-class expect(ExpectMeta):
+class expect(ExpectMetaMagic):
     """Minimal but very flexible implementation of the expect pattern.
     
     Use like this:
