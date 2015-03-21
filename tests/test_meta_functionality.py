@@ -106,18 +106,44 @@ class MetaFunctionalityTest(TestCase):
             return # only a problem in python 3
         
         formatted = None
-        try: expect(1).equals(2)
+        try:
+            expect(1).equals(2)
         except AssertionError as error:
             import traceback
             formatted = traceback.format_exc()
         
         expect(formatted).not_to_contain("During handling of the above exception, another exception occurred")
     
-    def _test_stacktrace_contains_matcher_as_top_level_entry(self):
-        # Standard, should only contain __call__ as top level entry
-        expect(1).equals(2)
-        # Some extra caution required as the wrapper should not really be there / be the top
-        expect(1) == 2
+    def test_stacktrace_hides_most_of_the_internals_of_pyexpects_machinery(self):
+        import traceback
+        exception_traceback = None
+        try:
+            # Standard, should only contain __call__ as top level entry
+            expect(1).equals(2)
+        except AssertionError as error:
+            _, _, exception_traceback = sys.exc_info()
+        processed_traceback = traceback.extract_tb(exception_traceback)
+        
+        expect(processed_traceback).has_length(2)
+        expect(processed_traceback[0]).to_contain('test_stacktrace_hides_most_of_the_internals_of_pyexpects_machinery')
+        expect(processed_traceback[0]).to_contain('expect(1).equals(2)')
+        
+        expect(processed_traceback[-1]).to_contain('__call__')
+        expect(processed_traceback[-1]).to_contain('raise exception')
+        
+        try:
+            # Not the standard as it has more wrappers
+            expect(1) == 2
+        except AssertionError as error:
+            _, _, exception_traceback = sys.exc_info()
+        processed_traceback = traceback.extract_tb(exception_traceback)
+        
+        expect(processed_traceback).has_length(3)
+        expect(processed_traceback[0]).to_contain('test_stacktrace_hides_most_of_the_internals_of_pyexpects_machinery')
+        expect(processed_traceback[0]).to_contain('expect(1) == 2')
+        
+        expect(processed_traceback[-1]).to_contain('__call__')
+        expect(processed_traceback[-1]).to_contain('raise exception')
     
     def _test_stacktrace_does_not_contain_internal_methods(self):
         pass # hide them even better! Consider temporarily changing the name of the top method to the matcher?

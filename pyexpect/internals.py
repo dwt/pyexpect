@@ -80,7 +80,7 @@ class ExpectMetaMagic(object):
                 # If you have a good idea how to improve this, please tell me!
                 exception = AssertionError(message)
                 is_python3 = sys.version_info[0] == 3
-                if is_python3: # 3 most likely
+                if is_python3:
                     # Get rid of the link to the causing exception as it greatly cluttes the error message
                     exception.__cause__ = None
                 raise exception
