@@ -128,9 +128,13 @@ class MetaFunctionalityTest(TestCase):
         expect(processed_traceback[0]).to_contain('test_stacktrace_hides_most_of_the_internals_of_pyexpects_machinery')
         expect(processed_traceback[0]).to_contain('expect(1).equals(2)')
         
-        expect(processed_traceback[-1]).to_contain('__call__')
-        expect(processed_traceback[-1]).to_contain('raise exception')
+        expect(processed_traceback[1]).to_contain('pyexpect_internals_hidden_in_backtraces')
+        expect(processed_traceback[1]).to_contain('raise exception')
         
+    
+    def test_stacktrace_does_not_contain_an_extra_method_when_wrapping_operator_matchers(self):
+        import traceback
+        exception_traceback = None
         try:
             # Not the standard as it has more wrappers
             expect(1) == 2
@@ -138,16 +142,12 @@ class MetaFunctionalityTest(TestCase):
             _, _, exception_traceback = sys.exc_info()
         processed_traceback = traceback.extract_tb(exception_traceback)
         
-        expect(processed_traceback).has_length(3)
-        expect(processed_traceback[0]).to_contain('test_stacktrace_hides_most_of_the_internals_of_pyexpects_machinery')
+        expect(processed_traceback).has_length(2)
+        expect(processed_traceback[0]).to_contain('test_stacktrace_does_not_contain_an_extra_method_when_wrapping_operator_matchers')
         expect(processed_traceback[0]).to_contain('expect(1) == 2')
         
-        expect(processed_traceback[-1]).to_contain('__call__')
-        expect(processed_traceback[-1]).to_contain('raise exception')
-    
-    def _test_stacktrace_does_not_contain_internal_methods(self):
-        pass # hide them even better! Consider temporarily changing the name of the top method to the matcher?
-        # Consider moving this to a special wrapper that does this so the normal code is undisturbed?
+        expect(processed_traceback[1]).to_contain('pyexpect_internals_hidden_in_backtraces')
+        expect(processed_traceback[1]).to_contain('raise exception')
     
     def test_hides_double_underscore_alternative_names_from_tracebacks(self):
         import sys
@@ -162,3 +162,5 @@ class MetaFunctionalityTest(TestCase):
         traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
         expect(traceback).not_to.contain('__ne__')
     
+# hide them even better! Consider temporarily changing the name of the top method to the matcher? could make the exception nicer?
+# Consider moving this to a special wrapper that does this so the normal code is undisturbed?

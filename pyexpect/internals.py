@@ -1,5 +1,23 @@
 import sys
 
+def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
+    # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
+    # Hides the actual matcher and all the methods it calls to assert stuff.
+    # Sadly there seems to be no better way to controll exception stack traces.
+    # If you have a good idea how to improve this, please tell me!
+    def pyexpect_internals_hidden_in_backtraces(*args, **kwargs):
+        try:
+            return method_to_be_wrapped(*args, **kwargs)
+        except AssertionError as exception:
+            is_python3 = sys.version_info[0] == 3
+            if is_python3:
+                # Get rid of the link to the causing exception as it greatly cluttes the error message
+                exception.__cause__ = None
+                exception.with_traceback(None)
+            raise exception
+    return pyexpect_internals_hidden_in_backtraces
+
+
 class ExpectMetaMagic(object):
     
     ## Internals ########################################################################################
@@ -52,6 +70,7 @@ class ExpectMetaMagic(object):
         self._selected_matcher_name = name
         self._selected_matcher = matcher
     
+    @remove_internals_from_assertion_backtraces
     def __call__(self, *args, **kwargs):
         """Called whenever you actualy invoke a matcher. 
         
@@ -74,16 +93,7 @@ class ExpectMetaMagic(object):
             message = self._message(assertion)
             
             if self._should_raise:
-                # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
-                # Hides the actual matcher and all the methods it calls to assert stuff.
-                # Sadly there seems to be no better way to controll exception stack traces.
-                # If you have a good idea how to improve this, please tell me!
-                exception = AssertionError(message)
-                is_python3 = sys.version_info[0] == 3
-                if is_python3:
-                    # Get rid of the link to the causing exception as it greatly cluttes the error message
-                    exception.__cause__ = None
-                raise exception
+                raise AssertionError(message)
             
             return (False, message)
         
@@ -106,6 +116,7 @@ class ExpectMetaMagic(object):
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
     def _message(self, assertion):
+        # REFACT: consider to add the newline before optional_negation only if the actual was above a specific length?
         message = self._message_from_assertion(assertion)
         actual = self._actual
         optional_negation = 'not ' if self._is_negative() else ''
@@ -140,9 +151,9 @@ class ExpectMetaMagic(object):
         # TODO: try if turning the special methods into descriptors allows to trigger
         # self.__getattribute__() without increasing the stack trace length on failures
         def wrap(special_method_name, public_name):
+            @remove_internals_from_assertion_backtraces
             def wrapper(self, *args, **kwargs):
                 __tracebackhide__ = True  # Hide from py.test tracebacks
-                # Sadly this increases the traceback lenght by one entry for other testing frameworks :/
                 self.__getattribute__(public_name)(*args, **kwargs)
             setattr(cls, special_method_name, wrapper)
         
