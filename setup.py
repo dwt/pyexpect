@@ -22,7 +22,7 @@ setup(
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
     url='https://bitbucket.org/dwt/pyexpect',
-    py_modules=['pyexpect'],
+    modules=['pyexpect'],
     test_suite="tests",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
