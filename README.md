@@ -85,7 +85,7 @@ Glad you ask! Here you go
     
     Done!
     
-    Also note how the matcher clearly communicates what is important: what it asserts, and what error message it generates. No fluff included! (tm)
+    Also note how the matcher clearly communicates what is important: what it asserts, and what error message it generates. No fluff included™!
 
 1.  Native `not` support: If you define a matcher, you don't have to define the inverse of it too or do anything special to get it. That means that for every matchers like `equals`, you automatically get the inverse of that, i.e. `not_equals`. This inverse can be invoked in a number of ways: 
     
