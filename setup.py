@@ -16,7 +16,7 @@ def readme():
 
 setup(
     name='pyexpect',
-    version='1.0.11',
+    version='1.0.12',
     description='Python expectaton library',
     long_description=readme(),
     author='Martin Häcker',
