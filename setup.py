@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf8
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 def readme():
     "Falls back to just file().read() on any error, because the conversion to rst is only really relevant when uploading the package to pypi"
@@ -22,7 +22,7 @@ setup(
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
     url='https://bitbucket.org/dwt/pyexpect',
-    modules=['pyexpect'],
+    packages=find_packages(),
     test_suite="tests",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
