@@ -142,7 +142,8 @@ class expect(ExpectMetaMagic):
     def exist(self):
         self._assert(self._actual is not None, "to exist (not be None)")
     
-    exists = exist
+    exists = to_exist = exist
+    
     # REFACT: consider adding 'from' alias to allow syntax like expect(False).from(some_longish_expression())
     # Could enhance readability, not sure it's a good idea?
     def equal(self, something):
@@ -227,13 +228,15 @@ class expect(ExpectMetaMagic):
     match = matching = matches = to_match
     is_matching = to_match
     
-    def to_start_with(self, expected_start):
+    def starts_with(self, expected_start):
         self._assert(self._actual.startswith(expected_start), "to start with {0!r}", expected_start)
-    starts_with = startswith = to_start_with
     
-    def to_end_with(self, expected_end):
+    startswith = to_start_with = starts_with
+    
+    def ends_with(self, expected_end):
         self._assert(self._actual.endswith(expected_end), "to end with {0!r}", expected_end)
-    ends_with = endswith = to_end_with
+    
+    endswith = to_end_with = ends_with
     
     # TODO: consider with statement support to allow code like this
     # with expect.raises(AssertionError):
