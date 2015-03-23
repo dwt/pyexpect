@@ -15,7 +15,7 @@ class MetaFunctionalityTest(TestCase):
         local_expect(1).local_matcher('one')
         expect(lambda: local_expect(2).local_matcher('two')).to_raise(AssertionError, r"^Expect 2 got two$")
     
-    def test_can_add_custom_matchers(self):
+    def test_can_add_custom_matchers_via_simple_assignment(self):
         calls = []
         class local_expect(expect): pass
         local_expect.custom_matcher = lambda *arguments: calls.append(arguments)
@@ -34,7 +34,7 @@ class MetaFunctionalityTest(TestCase):
         expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
         expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
     
-    def test_wrap_really_long_error_messages_to_make_them_easier_to_rad(self):
+    def test_wraps_really_long_error_messages_to_make_them_easier_to_read(self):
         error = expect(lambda: expect("really_long " * 50).to_equal('something shorter')).to_raise()
         expect(str(error)).to_match(r'\n\nto equal ')
     
@@ -82,6 +82,11 @@ class MetaFunctionalityTest(TestCase):
         # expect(3, with_message='fnord') == 3
         # local_expect = expect.with_message('fnord')
         # local_expect(3) == 3
+        
+        # Adding expect().with_message(...) and expect().should_raise(False) 
+        # * could be done without breaking the api, but it would break the contract that all public methods are matchers.
+        # * should_raise(False) is nicely symmetric, but it's a question whether the inverse .should_raise(True) is really 
+        #   neccessary, as it is the default already? Maybe something shorter? expect().dont_raise().returning().raising().
     
     def test_can_return_error_instead_of_raising(self):
         # Idea: have a good api to check expectations without raising
