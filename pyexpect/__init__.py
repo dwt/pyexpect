@@ -13,7 +13,6 @@
 # - get build server + button on bitbucket
 # - get coverage + button on bitbucket
 # - get documentation + button on bitbucket
-# - Improve py3 support - shorten exception stack traces
 # - allow subexpects, i.e. matchers that are implemented in terms of other matchers
 # - allow adding negation as a parameter to expect
 
@@ -35,7 +34,8 @@ class expect(ExpectMetaMagic):
     
     Most usefull in unit and acceptance tests but also as general assertions throughout your code.
     
-    To add custom matchers, just add them as instance methods to the expect object:
+    To add custom matchers, either subclass expect and add them as instance methods, or just add 
+    them as instance methods to the expect object:
     
         def my_matcher(self, arguments, defaults='something):
             pass # whatever you have to do. For helpers and availeable values see dir(expect())
@@ -43,7 +43,7 @@ class expect(ExpectMetaMagic):
     
     If you want the expectation to return a bool instead of raising go for:
     
-        a_bool, error_message = expect.returning(somethign).then.call.a.matcher()
+        a_bool, error_message = expect.returning(something).then.call.a.matcher()
     
     For more options and a list of the matchers, see the source. :)
     """
@@ -194,7 +194,7 @@ class expect(ExpectMetaMagic):
     in_ = included_in = within
     is_within = is_included_in = within
     
-    # REFACT: Error message is hard to read., needs formatting on multiple lines, or restriction to just the keys in question.
+    # REFACT: Error message is hard to read., needs formatting on multiple lines, or restriction to just the keys in question. Consider using pprint to format the output better?
     def sub_dict(self, a_subdict=None, **kwargs):
         expect(self._actual).is_instance(dict)
         
@@ -239,10 +239,15 @@ class expect(ExpectMetaMagic):
     # with expect.raises(AssertionError):
     #   something.that_might_raise()
     def to_raise(self, exception_class=Exception, message_regex=None):
-        """Be carefull with negative raise assertions as they swallow all exceptions that you 
-        don't specify. If you say `expect(raiser).not_.to_raise(FooException, 'fnord')` this 
-        is interpreted as: every other exception that doesn't conform to this description is 
-        ok and expected.
+        """ Check regexes by type and an optional message.
+        
+        Example:
+        catched_regex = expect(lambda: some_call(arg)).raises(SomeError)
+        catched_regex = expec(lambda: some_call(arg)).raises(SomeError, "a regex for the message")
+        
+        Always returns the exception that is caught.
+        
+        Exceptions that are not expected are rethrown, especially in negative cases.
         """
         # REFACT: consider to change to_raise to let all unexpected exceptions pass through
         # Not sure what that means to correctly implement the negative side though
@@ -252,6 +257,7 @@ class expect(ExpectMetaMagic):
         traceback = None
         try:
             self._actual()
+            # REFACT: consider to catch exception_class instead?
         except BaseException as exception:
             caught_exception = exception
             _, _, traceback = sys.exc_info()
