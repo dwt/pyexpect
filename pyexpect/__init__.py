@@ -19,7 +19,7 @@
 __all__ = ['expect']
 
 import re, sys
-from .internals import ExpectMetaMagic
+from .internals import ExpectMetaMagic, alias_with_hidden_backtrace
 
 class expect(ExpectMetaMagic):
     """Minimal but very flexible implementation of the expect pattern.
@@ -66,8 +66,6 @@ class expect(ExpectMetaMagic):
         self._expected_assertion_result = True
         self._selected_matcher = None
         self._selected_matcher_name = None
-        
-        self._enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives()
     
     @classmethod
     def with_message(cls, message, actual, should_raise=True):
@@ -149,14 +147,15 @@ class expect(ExpectMetaMagic):
     def equal(self, something):
         self._assert(something == self._actual, "to equal {0!r}", something)
     
-    __eq__ = equals = equal
+    equals = equal
     to_equal = is_equal = equal
+    __eq__ = alias_with_hidden_backtrace('equal')
     
     def different(self, something):
         self.not_ == something
     
-    __ne__ = different
     is_different = different
+    __ne__ = alias_with_hidden_backtrace('different')
     
     def be(self, something):
         self._assert(something is self._actual, "to be {0!r}", something)
@@ -211,7 +210,7 @@ class expect(ExpectMetaMagic):
         self._assert(actual_items == expected_items, 'to contain dict {0!r}', a_subdict)
     
     includes_dict = contains_dict = subdict = sub_dict
-    have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
+    to_have_subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
     def has_attribute(self, *attribute_names):
         for attribute_name in attribute_names:
@@ -319,29 +318,33 @@ class expect(ExpectMetaMagic):
     def greater_than(self, smaller):
         self._assert(self._actual > smaller, "to be greater than {0!r}", smaller)
     
-    __gt__ = bigger = larger = larger_than = greater = greater_than
+    bigger = larger = larger_than = greater = greater_than
     is_greater_than = is_greater = greater_than
+    __gt__ = alias_with_hidden_backtrace('greater_than')
     # TODO: consider to include *_then because it's such a common error?
     
     def greater_or_equal(self, smaller_or_equal):
         self._assert(self._actual >= smaller_or_equal, "to be greater or equal than {0!r}", smaller_or_equal)
     
-    __ge__ = greater_or_equal_than = greater_or_equal
+    greater_or_equal_than = greater_or_equal
     is_greater_or_equal_than = is_greater_or_equal = greater_or_equal
+    __ge__ = alias_with_hidden_backtrace('greater_or_equal')
     # TODO: consider to include *_then because it's such a common error?
     
     def less_than(self, greater):
         self._assert(self._actual < greater, "to be less than {0!r}", greater)
     
-    __lt__ = smaller = smaller_than = lesser = lesser_than = less = less_than
+    smaller = smaller_than = lesser = lesser_than = less = less_than
     is_smaller_than = is_less_than = less_than
+    __lt__ = alias_with_hidden_backtrace('less_than')
     # TODO: consider to include *_then because it's such a common error?
     
     def less_or_equal(self, greater_or_equal):
         self._assert(self._actual <= greater_or_equal, "to be less or equal than {0!r}", greater_or_equal)
     
-    __le__ = smaller_or_equal = smaller_or_equal_than = lesser_or_equal = lesser_or_equal_than = less_or_equal_than = less_or_equal
+    smaller_or_equal = smaller_or_equal_than = lesser_or_equal = lesser_or_equal_than = less_or_equal_than = less_or_equal
     is_smaller_or_equal = is_smaller_or_equal_than = is_less_or_equal_than = is_less_or_equal = less_or_equal
+    __le__ = alias_with_hidden_backtrace('less_or_equal')
     # TODO: consider to include *_then because it's such a common error?
     
     # TODO: consider adding is_between_exclusive

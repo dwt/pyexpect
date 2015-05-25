@@ -6,16 +6,32 @@ def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
     # Sadly there seems to be no better way to controll exception stack traces.
     # If you have a good idea how to improve this, please tell me!
     def pyexpect_internals_hidden_in_backtraces(*args, **kwargs):
+        __tracebackhide__ = True  # Hide from py.test tracebacks
         try:
             return method_to_be_wrapped(*args, **kwargs)
         except AssertionError as exception:
             is_python3 = sys.version > '3'
-            if is_python3:
+            if is_python3: # refact: would it be better to just check for hasattr(exception, '__cause__')?
                 # Get rid of the link to the causing exception as it greatly cluttes the error message
                 exception.__cause__ = None
                 exception.with_traceback(None)
             raise exception
     return pyexpect_internals_hidden_in_backtraces
+
+
+def alias_with_hidden_backtrace(public_name):
+    """Works around the problem that special methods (as in '__something__') are not resolved
+    using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
+    
+    This method works on the class dict and is repeated after each instantiation
+    to support adding or overwriting existing matchers at any time while not repeatedly doing the same.
+    """
+    @remove_internals_from_assertion_backtraces
+    def wrapper(self, *args, **kwargs):
+        self.__getattribute__(public_name)(*args, **kwargs)
+    return wrapper
+
+
 
 
 class ExpectMetaMagic(object):
@@ -77,7 +93,6 @@ class ExpectMetaMagic(object):
         Provides a good error message if you mistype the matcher name.
         
         Supports custom messages with the message keyword argument"""
-        __tracebackhide__ = True  # Hide from py.test tracebacks
         
         if self._selected_matcher is None:
             raise NotImplementedError("Tried to call non existing matcher '{0}' (Patches welcome!)".format(self._selected_matcher_name))
@@ -141,36 +156,3 @@ class ExpectMetaMagic(object):
     def _concatenate(self, *args):
         return args
     
-    @classmethod
-    def _enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives(cls):
-        """Works around the problem that special methods (as in '__something__') are not resolved
-        using __getattribute__() and thus do not provide the nice tracebacks that they public matchers provide.
-        
-        This method works on the class dict and is repeated after each instantiation
-        to support adding or overwriting existing matchers at any time while not repeatedly doing the same.
-        """
-        # TODO: try if turning the special methods into descriptors allows to trigger
-        # self.__getattribute__() without increasing the stack trace length on failures
-        def wrap(special_method_name, public_name):
-            @remove_internals_from_assertion_backtraces
-            def wrapper(self, *args, **kwargs):
-                __tracebackhide__ = True  # Hide from py.test tracebacks
-                self.__getattribute__(public_name)(*args, **kwargs)
-            setattr(cls, special_method_name, wrapper)
-        
-        special_names = filter(lambda name: name.startswith('__') and name.endswith('__'), dir(cls))
-        # Assumes that all public methods are matchers
-        matcher_names = filter(lambda name: not name.startswith('_'), dir(cls))
-        public_matcher_names_by_matcher = dict()
-        for name in matcher_names:
-            matcher = getattr(cls, name)
-            public_matcher_names_by_matcher[matcher] = name
-        matchers = list(public_matcher_names_by_matcher.keys())
-        
-        for special_name in special_names:
-            matcher = getattr(cls, special_name)
-            if matcher in matchers:
-                public_name = public_matcher_names_by_matcher[matcher]
-                wrap(special_name, public_name)
-    
-
