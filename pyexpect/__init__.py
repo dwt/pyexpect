@@ -157,6 +157,48 @@ class expect(ExpectMetaMagic):
     is_different = different
     __ne__ = alias_with_hidden_backtrace('different')
     
+    def change(self, getter, from_=None, by=None, to=None):
+        # REFACT None should be an allowed value here, need to switch to marker to detect 'no argument given'
+        # REFACT how to make this usefull with floats maybe a similar but different matcher
+        expect(self._actual).is_callable()
+        expect(getter).is_callable()
+        expect(from_ is not None or by is not None or to is not None).is_true()
+        
+        before = getter()
+        self._actual()
+        after = getter()
+        
+        expect(before is not None and after is not None).not_is_none() # wrong, None is allowed here
+        
+        actual_change = after - before
+        
+        if from_ is None: from_ = before
+        else: expect(from_) == before
+        
+        if to is None: to = after
+        else: expect(to) == after
+        
+        if by is None: by = actual_change
+        else: expect(by) == actual_change
+        
+        # self._assert(from_ == before, "fnord")
+        # self._assert(to == after, "fnord")
+        # self._assert(by == actual_change, "fnord")
+        # self._assert(from_ == by + to, "fnord {0!r} by {1!r} to {2!r}", from_, by, to)
+        
+        self._assert(
+            from_ == before
+            and to == after
+            and by == actual_change
+            and from_ + by == to, 
+            "\n\tto change  {0!r} by {1!r} to {2!r}"
+            "\n\tinstead of {3!r} by {4!r} to {5!r}", 
+            from_, by, to, 
+            before, actual_change, after)
+    
+    changing = changes = change
+    is_changing = to_change = change
+    
     def be(self, something):
         self._assert(something is self._actual, "to be {0!r}", something)
     
@@ -365,3 +407,13 @@ class expect(ExpectMetaMagic):
     about_equals = about_equal = about = almost_equals = almost_equal = close = close_to
     is_about =  is_almost_equal = is_close = is_close_to = close_to
     
+    def is_permutation_of(self, a_sequence, *additional_elements):
+        def element_counts(a_sequence):
+            import collections
+            counts = collections.defaultdict(int)
+            for element in a_sequence:
+                counts[element] += 1
+            return counts
+        
+        self._assert(element_counts(self._actual) == element_counts(a_sequence), "to be permutation of {0!r}", a_sequence)
+        

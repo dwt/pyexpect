@@ -327,15 +327,6 @@ class MatcherTest(TestCase):
         expect(dict).is_not.subclass_of(int)
         expect(lambda: expect(dict).subclass_of(int)).to_raise(AssertionError, "Expect <(?:class|type) 'dict'> to be subclass of <(?:class|type) 'int'>")
     
-    def _test_increases_by(sel):
-        # Not sure what the right syntax for this should be
-        # increase_by, increases_by
-        # with expect(count_getter).increases_by(a_number):
-        #   increase_count()
-        # expect(increaser).to.increase_by(accessor, a_number)
-        # expect(increaser, accessor).increases_by(a_number)
-        pass
-    
     def test_starts_with(self):
         expect('fnordfoo').starts_with('fnord')
         # expect(['foo', 'bar']).starts_with('foo')
@@ -350,8 +341,90 @@ class MatcherTest(TestCase):
             AssertionError, "Expect 'fnord' to end with 'bar'"
         )
     
-    def test_has_key(self):
+    
+    def test_is_permutation_of(self):
+        expect("fnord").is_permutation_of("fnord")
+        expect("Martin").is_permutation_of("nitraM")
+        expect("foo").is_permutation_of("ofo")
+        expect([1,2,3]).is_permutation_of([3,2,1])
+        
+        expect(lambda: expect("foo").is_permutation_of("fnord")) \
+            .to_raise(AssertionError, "^Expect 'foo' to be permutation of 'fnord'$")
+        
+        expect(lambda: expect(23).is_permutation_of("foo")) \
+            .to_raise(TypeError, "'int' object is not iterable")
+        
+    
+    def _test_changes(self):
+        expect(lambda: expect('fnord').to.change(lambda: None)) \
+            .to_raise(AssertionError, "^Expect 'fnord' to be callable$")
+        expect(lambda: expect(lambda: None).to.change('fnord')) \
+            .to_raise(AssertionError, "^Expect 'fnord' to be callable$")
+        
+        expect(lambda: expect(lambda: None).to.change(lambda: None, by='fnord')) \
+            .to_raise(AssertionError, "^Expect 'fnord' to be instance of 'int'$")
+        expect(lambda: expect(lambda: None).to.change(lambda: None, from_='fnord')) \
+            .to_raise(AssertionError, "^Expect 'fnord' to be instance of 'int'$")
+        expect(lambda: expect(lambda: None).to.change(lambda: None, to='fnord')) \
+            .to_raise(AssertionError, "^Expect 'fnord' to be instance of 'int'$")
+        
+        state = dict(count=0)
+        def actor(): state['count'] += 1
+        def getter(): return state['count']
+        def from_(from_=None, by=None, to=None):
+            return lambda: expect(actor).to_change(getter, from_=from_, by=by, to=to)
+        
+        expect(actor).to_change(getter, from_=0, by=1, to=1)
+        expect(from_(0, by=1, to=2)).raises(AssertionError)
+        
+        expect(actor).to_change(getter, from_=1, by=1)
+        expect(actor).to_change(getter, from_=2, to=3)
+        expect(actor).to_change(getter, from_=3)
+        
+        expect(actor).to_change(getter, by=1, to=5)
+        expect(actor).to_change(getter, by=1)
+        expect(actor).to_change(getter, to=7)
+        
+        expect(actor).to_change(getter)
+        
+        # Begriffs-verwirrung
+        # Was bedeutet:
+        # to_change(from_=3) -> muss vorher 3 sein! Muss sich ändern!
+        # to_change(from_=3, by=5) -> muss vorher 3 sein, muss sich um 5 ändern
+        # to_change(from_=0, by=10, to=2) -> inconsistent, error
+        
+        
+        
+        # expect(actor).to.change(getter, by=-3)
+        # expect(lambda: expect(actor).to.change(getter, by=4)).raises(AssertionError)
+        
+        # expect(foo).to.change(bar, from=0, by=-3)
+        # expect(foo).to.change(bar, from=0, to=-3)
+        # expect(foo).to.change(bar, to=0, by=-3)
+        # expect(lambda: expect(foo).to.change(bar, from=10, to=0, by=-3)).to_raise(AssertionError)
+        
+        # Syntax ideas
+        # expect(actor).to_change(getter, from_=about(3.3, max_delta=0.1), to=about(4.4, max_delta=0.1))
+        # about = expect.max_delta(0.1)
+        # expect(actor).to_change(getter, from_=about(3.3), to=about(4.4))
+        # expect(actor).to_change(getter, from_=expect.about(3.3, max_delta=0.1), to=expect.about(4.4,max_delta=0.1))
+        # expect(actor).to_change(getter, from_below=3.3, to_above=4.4)
+    
+    def _test_increases_by(self):
+        # decreases_by
+        # Not sure what the right syntax for this should be
+        # increase_by, increases_by
+        # with expect(count_getter).increases_by(a_number):
+        #   increase_count()
+        # expect(increaser).to.increase_by(accessor, a_number)
+        # expect(increaser, accessor).increases_by(a_number)
         pass
     
-    def test_has_subset(self):
+    
+    def _test_in(self):
+        expect('foo') in dict(foo='foo')
+        expect(lambda: expect('foo') in dict(bar='bar')).to_raise(AssertionError)
+    
+    def _test_has_subset(self):
         pass
+    
