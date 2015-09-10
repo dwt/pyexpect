@@ -260,14 +260,14 @@ class expect(ExpectMetaMagic):
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
     
-    def to_match(self, regex):
+    def matches(self, regex):
         string_type = str if sys.version > '3' else basestring
         expect(self._actual).is_instance(string_type)
         
         self._assert(re.search(regex, self._actual) is not None, "to be matched by regex r{0!r}", regex)
     
-    match = matching = matches = to_match
-    is_matching = to_match
+    match = matching = matches
+    is_matching = to_match = matches
     
     def starts_with(self, expected_start):
         self._assert(self._actual.startswith(expected_start), "to start with {0!r}", expected_start)
