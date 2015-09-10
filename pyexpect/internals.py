@@ -131,10 +131,13 @@ class ExpectMetaMagic(object):
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
     def _message(self, assertion):
-        message = self._message_from_assertion(assertion)
+        message = self._message_from_exception(assertion)
+        if isinstance(assertion, AssertionError) and message.startswith("Expect "):
+            raise assertion # show original exception
+        
         actual = repr(self._actual)
         # using two newlines to make it easier to find on a terminal
-        optional_newline = '\n\n' if len(actual) > 30 else ' '
+        optional_newline = '\n\n' if len(actual) > 40 else ' '
         optional_negation = 'not ' if self._is_negative() else ''
         assertion_message = "Expect {actual}{optional_newline}{optional_negation}{message}".format(**locals())
         
@@ -143,12 +146,12 @@ class ExpectMetaMagic(object):
         
         return assertion_message
     
-    def _message_from_assertion(self, assertion):
+    def _message_from_exception(self, exception):
         if sys.version < '3':
-            try: return unicode(assertion).encode('utf8')
+            try: return unicode(exception).encode('utf8')
             except UnicodeDecodeError as ignored: pass
         
-        return str(assertion)
+        return str(exception)
     
     def _is_negative(self):
         return self._expected_assertion_result is False

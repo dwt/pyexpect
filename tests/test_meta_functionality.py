@@ -6,6 +6,19 @@ import sys
 
 class MetaFunctionalityTest(TestCase):
     
+    def test_error_message_is_sane(self):
+        "Different ways to trigger the matchers should not generate the error message different"
+        expect(lambda: expect(0) != 0).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0) == 1).to_raise(AssertionError, "^Expect 0 to equal 1$")
+        
+        expect(lambda: expect(0).is_.different(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0).not_.equals(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0).not_equals(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0).equals(1)).to_raise(AssertionError, "^Expect 0 to equal 1$")
+        
+        # nested matcher
+        expect(lambda: expect(0).to_raise()).to_raise(AssertionError, "^Expect 0 to be callable$")
+    
     def test_can_subclass_expect(self):
         """Usefull if you want to extend expect with custom matchers without polluting the original expect()
         Used in the test suite to keep test isolation high."""
