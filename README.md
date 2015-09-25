@@ -14,7 +14,7 @@ Line noise is reduced as much as possible, so the error message is displayed as 
 
 ## Why should I use expect() over self.assert*?
 
-This is best explained in cotrast to the classic assertion pattern like the python unittest module uses. In addition to all that however, these assertions can be used anywhere and do not depend on any unittest package. But lets start with an example:
+This is best explained in contrast to the classic assertion pattern like the python unittest module uses. In addition to all that however, these assertions can be used anywhere and do not depend on any unittest package. But lets start with an example:
 
     self.assertEquals('foo', 'bar')
 
