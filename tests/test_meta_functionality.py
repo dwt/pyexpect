@@ -182,3 +182,12 @@ class MetaFunctionalityTest(TestCase):
         traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
         expect(traceback).not_to.contain('__ne__')
     
+    def _test_can_disable_backtrace_hiding(self):
+        # TODO is this actually required/ usefull?
+        is_error, message = expect.returning(lambda: None).to_raise()
+        
+        import traceback
+        rendered = traceback.format_tb(sys.exc_info()[2])
+        # print(is_error, message)
+        # print(rendered)
+        expect(rendered).contains('__call__')
