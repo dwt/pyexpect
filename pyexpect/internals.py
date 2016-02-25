@@ -115,6 +115,7 @@ class ExpectMetaMagic(object):
         return (True, "")
     
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
+        # FIXME assertions will be disabled in python -o 1 - so this my be no good if pyexpect is used as an expectation library in production code. See https://github.com/pyca/cryptography/commit/915e0a1194400203b0e49e05de5facbc4ac8eb66
         assert assertion is self._expected_assertion_result, \
             message_format.format(*message_positionals, **message_keywords)
     
