@@ -4,20 +4,8 @@ from pyexpect import expect
 from unittest import TestCase
 import sys
 
+
 class MetaFunctionalityTest(TestCase):
-    
-    def test_error_message_is_sane(self):
-        "Different ways to trigger the matchers should not generate the error message different"
-        expect(lambda: expect(0) != 0).to_raise(AssertionError, "^Expect 0 not to equal 0$")
-        expect(lambda: expect(0) == 1).to_raise(AssertionError, "^Expect 0 to equal 1$")
-        
-        expect(lambda: expect(0).is_.different(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
-        expect(lambda: expect(0).not_.equals(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
-        expect(lambda: expect(0).not_equals(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
-        expect(lambda: expect(0).equals(1)).to_raise(AssertionError, "^Expect 0 to equal 1$")
-        
-        # nested matcher
-        expect(lambda: expect(0).to_raise()).to_raise(AssertionError, "^Expect 0 to be callable$")
     
     def test_can_subclass_expect(self):
         """Usefull if you want to extend expect with custom matchers without polluting the original expect()
@@ -40,12 +28,18 @@ class MetaFunctionalityTest(TestCase):
         expect(calls).to.contain((instance,))
         expect(calls).to.contain((instance, 'bar', 'baz'))
     
-    def test_assertion_error_from_matcher_is_enhanced(self):
-        def raise_(self):
-            raise AssertionError('sentinel')
-        expect.fnord = raise_
-        expect(lambda: expect(1).fnord()).raises(AssertionError, r"Expect 1 sentinel")
-        expect(lambda: expect(1).not_fnord()).raises(AssertionError, r"Expect 1 not sentinel")
+    def test_error_message_is_sane(self):
+        "Different ways to trigger the matchers should not generate the error message different"
+        expect(lambda: expect(0) != 0).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0) == 1).to_raise(AssertionError, "^Expect 0 to equal 1$")
+        
+        expect(lambda: expect(0).is_.different(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0).not_.equals(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0).not_equals(0)).to_raise(AssertionError, "^Expect 0 not to equal 0$")
+        expect(lambda: expect(0).equals(1)).to_raise(AssertionError, "^Expect 0 to equal 1$")
+        
+        # nested matcher
+        expect(lambda: expect(0).to_raise()).to_raise(AssertionError, "^Expect 0 to be callable$")
     
     def test_wraps_really_long_error_messages_to_make_them_easier_to_read(self):
         error = expect(lambda: expect("really_long " * 50).to_equal('something shorter')).to_raise()
@@ -63,11 +57,15 @@ class MetaFunctionalityTest(TestCase):
         expect(lambda: expect('fnord').nonexisting_matcher()) \
             .to_raise(NotImplementedError, r"Tried to call non existing matcher 'nonexisting_matcher'")
     
-    def test_not_negates_only_if_on_word_boundaries(self):
-        expect(lambda: expect(True).nothing_that_negates.is_(True)).not_.to_raise()
-        expect(lambda: expect(True).annotation.to.be(True)).not_.to_raise()
-        expect(lambda: expect(True).an_not_ation.to.be(True)).to_raise()
-        expect(lambda: expect(True).an_not.to.be(True)).to_raise()
+    def test_dont_double_enhance_exceptions_from_internally_used_expect_calls(self):
+        class local_expect(expect):
+            def nested_expect(self):
+                expect(True, message='Fnord') == False
+            def nested_assert(self):
+                assert False, "Fnord"
+        
+        expect(lambda: local_expect(None).nested_expect()).to_raise(AssertionError, "^Fnord$")
+        expect(lambda: local_expect(None).nested_assert()).to_raise(AssertionError, "^Fnord$")
     
     def test_can_specify_custom_message(self):
         def messaging(message):
@@ -101,12 +99,11 @@ class MetaFunctionalityTest(TestCase):
         # * should_raise(False) is nicely symmetric, but it's a question whether the inverse .should_raise(True) is really 
         #   neccessary, as it is the default already? Maybe something shorter? expect().dont_raise().returning().raising().
     
-    def test_can_return_error_instead_of_raising(self):
-        # Idea: have a good api to check expectations without raising
-        expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
-        expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
-        expect(expect.returning(False).to_be(False)).equals((True, ""))
-        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
+    def test_not_negates_only_if_on_word_boundaries(self):
+        expect(lambda: expect(True).nothing_that_negates.is_(True)).not_.to_raise()
+        expect(lambda: expect(True).annotation.to.be(True)).not_.to_raise()
+        expect(lambda: expect(True).an_not_ation.to.be(True)).to_raise()
+        expect(lambda: expect(True).an_not.to.be(True)).to_raise()
     
     def test_not_in_path_inverts_every_matcher(self):
         expect(3).to_be(3)
@@ -118,10 +115,17 @@ class MetaFunctionalityTest(TestCase):
         raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)
         expect(raising).to_raise(AssertionError, "division.* by zero")
     
+    def test_can_return_error_instead_of_raising(self):
+        # Idea: have a good api to check expectations without raising
+        expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
+        expect(expect(False, should_raise=False).not_to.be(True)).equals((True, ""))
+        expect(expect.returning(False).to_be(False)).equals((True, ""))
+        expect(expect.returning(False).to_be(True)).to_equal((False, "Expect False to be True"))
+    
     def test_missing_argument_to_expect_raises_with_good_error_message(self):
         expect(lambda: expect()).to_raise(TypeError)
     
-    def test_should_not_add_extra_backtrace_of_causing_exception_in_python_3(self):
+    def test_should_not_add_extra_backtrace_if_causing_exception_in_python_3(self):
         if sys.version < '3':
             return # only a problem in python 3
         
