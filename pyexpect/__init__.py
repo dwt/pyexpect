@@ -18,8 +18,10 @@
 
 __all__ = ['expect']
 
-import re, sys
+import re, sys, numbers
 from .internals import ExpectMetaMagic, alias_with_hidden_backtrace
+
+marker = object()
 
 class expect(ExpectMetaMagic):
     """Minimal but very flexible implementation of the expect pattern.
@@ -165,44 +167,58 @@ class expect(ExpectMetaMagic):
     is_different = different
     __ne__ = alias_with_hidden_backtrace('different')
     
-    def change(self, getter, from_=None, by=None, to=None):
-        # REFACT None should be an allowed value here, need to switch to marker to detect 'no argument given'
-        # REFACT how to make this usefull with floats maybe a similar but different matcher
+    def change(self, getter, from_=marker, by=None, to=marker):
+        """@arg from_ and @arg to can be of any type.
+        @arg by only supports numeric arguments right now and requires
+        @arg from_ and @arg to also to be numeric."""
+        # REFACT how to make this usefull with floats maybe a similar but different matcher?
         expect(self._actual).is_callable()
         expect(getter).is_callable()
-        expect(from_ is not None or by is not None or to is not None).is_true()
+        expect(
+            from_ is not marker
+            or by is not None
+            or to is not marker,
+            message="At least one argument of 'from_', 'by', 'to' has to be specified"
+        ).is_true()
+        
+        if by is not None:
+            expect(by).is_instance_of(numbers.Number)    
+            if to is not marker: expect(to).is_instance_of(numbers.Number)
+            if from_ is not marker: expect(from_).is_instance_of(numbers.Number)
+            if to is not marker and from_ is not marker:
+                assert from_ + by == to, \
+                    "Inconsistant arguments: from={from_!r} + by={by!r} != to={to!r}".format(**locals())
         
         before = getter()
         self._actual()
         after = getter()
         
-        expect(before is not None and after is not None).not_is_none() # wrong, None is allowed here
+        if by is not None:
+            message = "by={by!r} was given, but getter did not return a numeric value".format(**locals())
+            expect(before, message=message).is_instance_of(numbers.Number)
+            expect(after, message=message).is_instance_of(numbers.Number)
         
-        actual_change = after - before
+        # REFACT consider to assert that before and after have to be numeric if by is given
+        def assertion():
+            by_ok =  before + by == after if by is not None else True
+            from_ok = before == from_ if from_ is not marker else True
+            to_ok = after == to if to is not marker else True
+            return by_ok and from_ok and to_ok
         
-        if from_ is None: from_ = before
-        else: expect(from_) == before
+        def message():
+            # only outputs the first error, as that works way better with negated answers.
+            # TODO would be nice to find a formulation that allows showing all errors at once
+            message = ""
+            if from_ is not marker:
+                message += 'to start from {from_!r} '
+            elif by is not None:
+                message += 'to change by {by!r} '
+            elif to is not marker:
+                message += 'to end with {to!r} '
+            return message + 'but it changed from {before!r} to {after!r}'
         
-        if to is None: to = after
-        else: expect(to) == after
-        
-        if by is None: by = actual_change
-        else: expect(by) == actual_change
-        
-        # self._assert(from_ == before, "fnord")
-        # self._assert(to == after, "fnord")
-        # self._assert(by == actual_change, "fnord")
-        # self._assert(from_ == by + to, "fnord {0!r} by {1!r} to {2!r}", from_, by, to)
-        
-        self._assert(
-            from_ == before
-            and to == after
-            and by == actual_change
-            and from_ + by == to, 
-            "\n\tto change  {0!r} by {1!r} to {2!r}"
-            "\n\tinstead of {3!r} by {4!r} to {5!r}", 
-            from_, by, to, 
-            before, actual_change, after)
+        self._assert(assertion(), message(), \
+            from_=from_, to=to, by=by, before=before, after=after)
     
     changing = changes = change
     is_changing = to_change = change
