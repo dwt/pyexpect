@@ -106,6 +106,8 @@ class ExpectMetaMagic(object):
         
         Supports custom messages with the message keyword argument"""
         
+        # TODO would be nice if this could show the availeable matchers and propose something where the spelling is close 'did you mean xxx'
+        # When listing availeable matchers, they should be groupdd by aliasses
         if self._selected_matcher is None:
             raise NotImplementedError("Tried to call non existing matcher '{0}' (Patches welcome!)".format(self._selected_matcher_name))
         
