@@ -4,6 +4,7 @@ from pyexpect import expect
 from unittest import TestCase
 import sys
 
+from pyexpect.internals import disabled_backtrace_cleaning
 
 class MetaFunctionalityTest(TestCase):
     
@@ -186,12 +187,19 @@ class MetaFunctionalityTest(TestCase):
         traceback = '\n'.join(traceback.format_tb(sys.exc_info()[2]))
         expect(traceback).not_to.contain('__ne__')
     
-    def _test_can_disable_backtrace_hiding(self):
-        # TODO is this actually required/ usefull?
-        is_error, message = expect.returning(lambda: None).to_raise()
-        
+    def test_can_disable_backtrace_hiding(self):
+        # To ease debugging matchers
         import traceback
-        rendered = traceback.format_tb(sys.exc_info()[2])
-        # print(is_error, message)
-        # print(rendered)
-        expect(rendered).contains('__call__')
+        exception_traceback = None
+        with disabled_backtrace_cleaning():
+            try:
+                # Not the standard as it has more wrappers
+                expect(1) == 2
+            except AssertionError as error:
+                _, _, exception_traceback = sys.exc_info()
+        accessible_traceback = traceback.extract_tb(exception_traceback)
+        # (filename, line number, function name, text)
+        function_names = [function_name for _, _, function_name, _ in accessible_traceback]
+        expect(function_names).contains('__call__')
+        expect(function_names).contains('equal')
+        expect(function_names).contains('_assert')

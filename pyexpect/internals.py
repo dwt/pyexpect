@@ -1,4 +1,13 @@
 import sys
+from contextlib import contextmanager
+
+@contextmanager
+def disabled_backtrace_cleaning():
+    remove_internals_from_assertion_backtraces.disabled = True
+    try:
+        yield
+    finally:
+        del remove_internals_from_assertion_backtraces.disabled
 
 def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
     # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
@@ -7,6 +16,9 @@ def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
     # If you have a good idea how to improve this, please tell me!
     def pyexpect_internals_hidden_in_backtraces(*args, **kwargs):
         __tracebackhide__ = True  # Hide from py.test tracebacks
+        if hasattr(remove_internals_from_assertion_backtraces, 'disabled'):
+            return method_to_be_wrapped(*args, **kwargs)
+        
         try:
             return method_to_be_wrapped(*args, **kwargs)
         except AssertionError as exception:
