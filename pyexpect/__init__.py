@@ -100,7 +100,7 @@ class expect(ExpectMetaMagic):
     
     # On writing matchers:
     # You really only need to throw an AssertionError from the matcher and you're done.
-    # However, you should always use the self._assert* family of methods to do so, to support automatic negation.
+    # However, you should always use the self._assert* family of methods to do so, to support automatic negation, and nice error message enhancement.
     
     # On naming matchers:
     # Their name should be clear and fit in with the naming scheme of the existing matchers. 
@@ -118,9 +118,17 @@ class expect(ExpectMetaMagic):
     # Right now some be_* prefixes are included as aliasses, but I will probably phase 
     # them out in favor of using arbitrary chaining to achieve their effect.
     
-    # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
+    # On debugging matchers:
+    # Some pyton debuggers will hide all the internals of the expect method
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
     # `hf_unhide` is often the keyword here.
+    # It can also be helpfull to disable the backtrace munging that pyexpect does. 
+    # To do so, wrap the code in question with:
+    #    import pyexpect.internals
+    #    with pyexpect.internals.disabled_backtrace_cleaning():
+    #        expect(foo).my_matcher()
+    # and you will get the full traceback.
+
     
     def true(self):
         self._assert(self._actual is True, "to be True")
