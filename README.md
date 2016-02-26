@@ -14,7 +14,7 @@ Line noise is reduced as much as possible, so the error message is displayed as 
 
 ## Why should I use expect() over self.assert*?
 
-This is best explained in contrast to the classic assertion pattern like the python unittest module uses. In addition to all that however, these assertions can be used anywhere and do not depend on any unittest package. But lets start with an example:
+This is best explained in contrast to the classic assertion pattern like the python unittest module uses. In addition to all that however, these assertions can be used independently of any unittest package. But lets start with an example:
 
     self.assertEquals('foo', 'bar')
 
@@ -45,11 +45,11 @@ Thus the mapping from the error message is immediate and complete saving you min
 
 As a bonus all these exceptions are not coupled to any TestCase class so you can easily reuse them anywhere in your code to formalize expectations that your code has about some internal state. Sometimes called 'Design by Contract' or 'Fail Fast' programming. Oh and these expectations are generally shorter, so you even have less to type while getting clearer and more to the point assertions into your tests. Almost like having a cake and eating it too!
 
-## So give me the features!
+## Interesting! So what can it do?
 
-Glad you ask! Here you go
+Glad you ask! Here you go:
 
-1.  Lots of included matchers: Take a look at the source to see all the assertions you need to get started. From `equals` over `be` or `is_` and `raises` till `matches` - we've got you covered. And not only that, but each matcher has some aliasses so you can use the variant that reads the best in your assertion.
+1.  Lots of included matchers: Take a look at the source to see all the assertions you need to get started. From `equals` over `be` or `is_` and `raises` till `matches` - we've got you covered. And not only that, but each matcher has some aliasses so you can use the variant that reads the best in your assertion, or that you are more used to when using multiple unit testing frameworks across language boundaries (python/js anyone?).
     
     Some examples:
     
@@ -165,7 +165,7 @@ Glad you ask! Here you go
         Traceback (most recent call last):
           File "test_example.py", line 11, in test_something
             expect('fnord').to_be.something()
-          File "/Users/dwt/Code/Projekte/python-expect/pyexpect.py", line 150, in __call__
+          File "/Users/dwt/Code/Projekte/pyexpect/internals.py  # pyexpect_internals_hidden_in_backtraces
             raise assertion
         AssertionError: Expect 'fnord' to be something
     
@@ -174,7 +174,7 @@ Glad you ask! Here you go
         FAIL: test_example:Test.test_something
           mate +11  test_example.py  # test_something
             expect('fnord').to_be.something()
-          mate +150 pyexpect.py  # __call__
+          mate +150 internals.py  # pyexpect_internals_hidden_in_backtraces
             raise assertion
         AssertionError: Expect 'fnord' to be something
         
@@ -185,9 +185,34 @@ Glad you ask! Here you go
         >       expect('fnord').to_be.something()
         E       AssertionError: Expect 'fnord' to be something
     
-    Notice here, that the actual matcher `someting()` calls another method `_assert` to do the actual assertion and compose the error message, but none of this is visible in the stack trace? That is true for any methods you call in the matcher, so call into your api or whatever you need to trigger the assertion and enjoy readable error message none the less.
+    Notice here, that the actual matcher `someting()` calls another method `_assert` to do the actual assertion and compose the error message, but none of this is visible in the stack trace? That is true for any methods you call in the matcher, so call into your api or whatever you need to trigger the assertion and enjoy the readability of the generated error messages.
     
-    Therefore, error messages are much easier to read and there is less fluff in between the error and the cause to distract you. As it should be.
+    Another common cause for really hard to read error messages are too long messages. Ever had something like this?
+    
+        FAIL: test_example (__main__.DemoTest)
+        ----------------------------------------------------------------------
+        Traceback (most recent call last):
+          File "untitled", line 15, in test_example
+            self.assertEquals(long_actual, long_expected)
+        AssertionError: ['foo', 'bar', 'baz', 'quoox', 'quaax', 'quuuxfoo', 'bar', 'baz', 'quoox', 'quaax', 'quuux'] != ['foo', 'bar', 'baz', 'quoox', 'quaax', 'quuux', 'foo', 'bar', 'baz', 'quoox', 'quaax', 'quuux', 'foo', 'bar', 'baz', 'quoox', 'quaax', 'quuux']
+    
+    Good luck finding where the output of the expected and actual object even are separated, let alone what is different between them.
+    
+    pyexpect formats long error messages on multiple lines, so you always see where the complaint starts and have a much easier time mentally diffing the two objects:
+    
+        FAIL: test_example (__main__.DemoTest)
+        ----------------------------------------------------------------------
+        Traceback (most recent call last):
+          File "test.py", line 16, in test_example
+            expect(long_actual) == long_expected
+          File "pyexpect/internals.py", line 17, in pyexpect_internals_hidden_in_backtraces
+            raise exception
+        AssertionError: Expect ['foo', 'bar', 'baz', 'quoox', 'quaax', 'quuuxfoo', 'bar', 'baz', 'quoox', 'quaax', 'quuux']
+
+        to equal ['foo', 'bar', 'baz', 'quoox', 'quaax', 'quuux', 'foo', 'bar', 'baz', 'quoox', 'quaax', 'quuux', 'foo', 'bar', 'baz', 'quoox', 'quaax', 'quuux']
+        
+    
+    tl;dr: error messages are much easier to read and there is less fluff in between the error and the cause to distract you. As it should be.
 
 1.  Usage outside of unit tests: You can use this package as a standalone assertion package that gives you much more expressive assertions than just using using `assert` and refined error messages to boot.
     

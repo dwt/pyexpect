@@ -327,15 +327,6 @@ class MatcherTest(TestCase):
         expect(dict).is_not.subclass_of(int)
         expect(lambda: expect(dict).subclass_of(int)).to_raise(AssertionError, "Expect <(?:class|type) 'dict'> to be subclass of <(?:class|type) 'int'>")
     
-    def _test_increases_by(sel):
-        # Not sure what the right syntax for this should be
-        # increase_by, increases_by
-        # with expect(count_getter).increases_by(a_number):
-        #   increase_count()
-        # expect(increaser).to.increase_by(accessor, a_number)
-        # expect(increaser, accessor).increases_by(a_number)
-        pass
-    
     def test_starts_with(self):
         expect('fnordfoo').starts_with('fnord')
         # expect(['foo', 'bar']).starts_with('foo')
@@ -350,8 +341,146 @@ class MatcherTest(TestCase):
             AssertionError, "Expect 'fnord' to end with 'bar'"
         )
     
-    def test_has_key(self):
+    
+    def test_is_permutation_of(self):
+        expect("fnord").is_permutation_of("fnord")
+        expect("Martin").is_permutation_of("nitraM")
+        expect("foo").is_permutation_of("ofo")
+        expect([1,2,3]).is_permutation_of([3,2,1])
+        
+        expect(lambda: expect("foo").is_permutation_of("fnord")) \
+            .to_raise(AssertionError, "^Expect 'foo' to be permutation of 'fnord'$")
+        
+        expect(lambda: expect(23).is_permutation_of("foo")) \
+            .to_raise(TypeError, "'int' object is not iterable")
+        
+    
+    def test_changes(self):
+        # actor and getter need to be callable
+        expect(lambda: expect('expected').to.change(lambda: None)) \
+            .to_raise(AssertionError, "^Expect 'expected' to be callable$")
+        expect(lambda: expect(lambda: None).to.change('getter')) \
+            .to_raise(AssertionError, "^Expect 'getter' to be callable$")
+        
+        # numeric by argument
+        expect(lambda: expect(id).to.change(id, by='by_fnord')) \
+            .to_raise(AssertionError, "^Expect 'by_fnord' to be instance of 'Number'$")
+        expect(lambda: expect(id).to.change(id, from_='from_fnord', by=2)) \
+            .to_raise(AssertionError, "^Expect 'from_fnord' to be instance of 'Number'$")
+        expect(lambda: expect(id).to.change(id, to='to_fnord', by=2)) \
+            .to_raise(AssertionError, "^Expect 'to_fnord' to be instance of 'Number'$")
+        
+        # nothing specified - error
+        expect(lambda: expect(id).to_change(id)).to_raise(AssertionError,
+            "^At least one argument of 'from_', 'by', 'to' has to be specified$")
+       
+        # consistent arguments work
+        state = dict(count=0)
+        def actor(): state['count'] += 1
+        def getter(): return state['count']
+        def from_(from_=None, by=None, to=None):
+            return lambda: expect(actor).to_change(getter, from_=from_, by=by, to=to)
+        
+        # inconsistent arguments
+        assertion = expect(from_(0, by=1, to=2)) \
+            .raises(AssertionError, r"^Inconsistant arguments: from=0 \+ by=1 != to=2$")
+        expect(lambda: expect(id).to_change(id, from_=0, by=10, to=2)) \
+            .to_raise(AssertionError, r"^Inconsistant arguments: from=0 \+ by=10 != to=2$")
+        
+        # fully specified
+        expect(actor).to_change(getter, from_=0, by=1, to=1)
+        
+        # partially specified
+        expect(actor).to_change(getter, from_=1, by=1)
+        expect(actor).to_change(getter, from_=2, to=3)
+        expect(actor).to_change(getter, from_=3)
+        
+        expect(actor).to_change(getter, by=1, to=5)
+        expect(actor).to_change(getter, by=1)
+        expect(actor).to_change(getter, to=7)
+        
+        # non numeric arguments
+        def non_numeric(): return "something"
+        expect(actor).to.change(non_numeric, from_="something")
+        expect(actor).to.change(non_numeric, to="something")
+        
+        # None for from_ and to
+        expect(actor).to_change(lambda: None, from_=None)
+        expect(actor).to_change(lambda: None, to=None)
+        
+        # error messages
+        expect(lambda: expect(actor).to.change(non_numeric, from_="nothing")) \
+            .to_raise(AssertionError, "to start from 'nothing' but it changed from 'something' to 'something'$")
+        expect(lambda: expect(actor).to.change(non_numeric, to="nothing")) \
+            .to_raise(AssertionError, "to end with 'nothing' but it changed from 'something' to 'something'$")
+        expect(lambda: expect(actor).to.change(non_numeric, by=2)) \
+            .to_raise(AssertionError, "by=2 was given, but getter did not return a numeric value$")
+        
+        # only shows the first error when given multiple arguments
+        # expect(lambda: expect(actor).to.change(non_numeric, from_="nothing")) \
+        #     .to_raise(AssertionError, "to start from 'nothing' but it changed from 'something' to 'something'$")
+        # expect(lambda: expect(actor).to.change(non_numeric, to="nothing")) \
+        #     .to_raise(AssertionError, "to end with 'nothing' but it changed from 'something' to 'something'$")
+        # expect(lambda: expect(actor).to.change(non_numeric, by=2)) \
+        #     .to_raise(AssertionError, "to change by 2 but it changed from 'something' to 'something'$")
+        
+        # negations
+        expect(actor).not_to_change(getter, from_=-1)
+        expect(lambda: expect(actor).not_to_change(getter, from_=15)) \
+            .to_raise(AssertionError, "not to start from 15 but it changed from 15 to 16$")
+        expect(lambda: expect(actor).not_to_change(getter, to=17)) \
+            .to_raise(AssertionError, "not to end with 17 but it changed from 16 to 17$")
+        expect(lambda: expect(actor).not_to_change(getter, by=1)) \
+            .to_raise(AssertionError, "not to change by 1 but it changed from 17 to 18$")
+        
+        # only shows the first problem in negation
+        expect(lambda: expect(actor).not_to_change(getter, from_=18, by=1, to=19)) \
+            .to_raise(AssertionError, "not to start from 18 but it changed from 18 to 19$")
+        expect(lambda: expect(actor).not_to_change(getter, by=1, to=20)) \
+            .to_raise(AssertionError, "not to change by 1 but it changed from 19 to 20$")
+        expect(lambda: expect(actor).not_to_change(getter, to=21)) \
+            .to_raise(AssertionError, "not to end with 21 but it changed from 20 to 21$")
+        
+        # accepts negations as soon as one of the constrained values diverges
+        expect(actor).not_to_change(getter, from_=1, by=1, to=2)
+        expect(actor).not_to_change(getter, from_=22, by=2, to=24)
+        expect(actor).not_to_change(getter, by=2)
+        expect(actor).not_to_change(getter, by=2, to=25)
+        expect(actor).not_to_change(getter, from_=25, by=2)
+        expect(actor).not_to_change(getter, from_=26, to=30)
+        
+        # TODO having multiple values to constrain the change with not can lead to unexpected passes
+        # not quite sure what best to do about this, kind of similar to the problem with exceptions
+        
+        """
+        Syntax ideas:
+        
+        expect(actor).to_change(getter, from_=about(3.3, max_delta=0.1), to=about(4.4, max_delta=0.1))
+        about = expect.max_delta(0.1)
+        expect(actor).to_change(getter, from_=about(3.3), to=about(4.4))
+        expect(actor).to_change(getter, from_=expect.about(3.3, max_delta=0.1), to=expect.about(4.4,max_delta=0.1))
+        expect(actor).to_change(getter, from_below=3.3, to_above=4.4)
+        
+        with expect(getter).changes(to=10):
+            # actor code
+        """
+    
+    def _test_increases_by(self):
+        # decreases_by
+        # Not sure what the right syntax for this should be
+        # increase_by, increases_by
+        # with expect(count_getter).increases_by(a_number):
+        #   increase_count()
+        # expect(increaser).to.increase_by(accessor, a_number)
+        # expect(increaser, accessor).increases_by(a_number)
         pass
     
-    def test_has_subset(self):
+    
+    def _test_in(self):
+        expect('foo') in dict(foo='foo')
+        expect(lambda: expect('foo') in dict(bar='bar')).to_raise(AssertionError)
+    
+    
+    def _test_has_subset(self):
         pass
+    

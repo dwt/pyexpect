@@ -18,8 +18,10 @@
 
 __all__ = ['expect']
 
-import re, sys
-from .internals import ExpectMetaMagic
+import re, sys, numbers
+from .internals import ExpectMetaMagic, alias_with_hidden_backtrace
+
+marker = object()
 
 class expect(ExpectMetaMagic):
     """Minimal but very flexible implementation of the expect pattern.
@@ -66,8 +68,6 @@ class expect(ExpectMetaMagic):
         self._expected_assertion_result = True
         self._selected_matcher = None
         self._selected_matcher_name = None
-        
-        self._enable_nicer_backtraces_for_new_double_underscore_matcher_alternatives()
     
     @classmethod
     def with_message(cls, message, actual, should_raise=True):
@@ -102,7 +102,7 @@ class expect(ExpectMetaMagic):
     
     # On writing matchers:
     # You really only need to throw an AssertionError from the matcher and you're done.
-    # However, you should always use the self._assert* family of methods to do so, to support automatic negation.
+    # However, you should always use the self._assert* family of methods to do so, to support automatic negation, and nice error message enhancement.
     
     # On naming matchers:
     # Their name should be clear and fit in with the naming scheme of the existing matchers. 
@@ -120,9 +120,17 @@ class expect(ExpectMetaMagic):
     # Right now some be_* prefixes are included as aliasses, but I will probably phase 
     # them out in favor of using arbitrary chaining to achieve their effect.
     
-    # On debugging matchers: Some pyton debuggers will hide all the internals of the expect method
+    # On debugging matchers:
+    # Some pyton debuggers will hide all the internals of the expect method
     # To match py.tests behaviour. Read up on hidden frames and how to unhide them in your python debugger
     # `hf_unhide` is often the keyword here.
+    # It can also be helpfull to disable the backtrace munging that pyexpect does. 
+    # To do so, wrap the code in question with:
+    #    import pyexpect.internals
+    #    with pyexpect.internals.disabled_backtrace_cleaning():
+    #        expect(foo).my_matcher()
+    # and you will get the full traceback.
+
     
     def true(self):
         self._assert(self._actual is True, "to be True")
@@ -149,14 +157,71 @@ class expect(ExpectMetaMagic):
     def equal(self, something):
         self._assert(something == self._actual, "to equal {0!r}", something)
     
-    __eq__ = equals = equal
+    equals = equal
     to_equal = is_equal = equal
+    __eq__ = alias_with_hidden_backtrace('equal')
     
     def different(self, something):
         self.not_ == something
     
-    __ne__ = different
     is_different = different
+    __ne__ = alias_with_hidden_backtrace('different')
+    
+    def change(self, getter, from_=marker, by=None, to=marker):
+        """@arg from_ and @arg to can be of any type.
+        @arg by only supports numeric arguments right now and requires
+        @arg from_ and @arg to also to be numeric."""
+        # REFACT how to make this usefull with floats maybe a similar but different matcher?
+        expect(self._actual).is_callable()
+        expect(getter).is_callable()
+        expect(
+            from_ is not marker
+            or by is not None
+            or to is not marker,
+            message="At least one argument of 'from_', 'by', 'to' has to be specified"
+        ).is_true()
+        
+        if by is not None:
+            expect(by).is_instance_of(numbers.Number)    
+            if to is not marker: expect(to).is_instance_of(numbers.Number)
+            if from_ is not marker: expect(from_).is_instance_of(numbers.Number)
+            if to is not marker and from_ is not marker:
+                assert from_ + by == to, \
+                    "Inconsistant arguments: from={from_!r} + by={by!r} != to={to!r}".format(**locals())
+        
+        before = getter()
+        self._actual()
+        after = getter()
+        
+        if by is not None:
+            message = "by={by!r} was given, but getter did not return a numeric value".format(**locals())
+            expect(before, message=message).is_instance_of(numbers.Number)
+            expect(after, message=message).is_instance_of(numbers.Number)
+        
+        # REFACT consider to assert that before and after have to be numeric if by is given
+        def assertion():
+            by_ok =  before + by == after if by is not None else True
+            from_ok = before == from_ if from_ is not marker else True
+            to_ok = after == to if to is not marker else True
+            return by_ok and from_ok and to_ok
+        
+        def message():
+            # only outputs the first error, as that works way better with negated answers.
+            # TODO would be nice to find a formulation that allows showing all errors at once
+            message = ""
+            if from_ is not marker:
+                message += 'to start from {from_!r} '
+            elif by is not None:
+                message += 'to change by {by!r} '
+            elif to is not marker:
+                message += 'to end with {to!r} '
+            return message + 'but it changed from {before!r} to {after!r}'
+        
+        self._assert(assertion(), message(), \
+            from_=from_, to=to, by=by, before=before, after=after)
+    
+    changing = changes = change
+    is_changing = to_change = change
     
     def be(self, something):
         self._assert(something is self._actual, "to be {0!r}", something)
@@ -211,7 +276,7 @@ class expect(ExpectMetaMagic):
         self._assert(actual_items == expected_items, 'to contain dict {0!r}', a_subdict)
     
     includes_dict = contains_dict = subdict = sub_dict
-    have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
+    to_have_subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
     
     def has_attribute(self, *attribute_names):
         for attribute_name in attribute_names:
@@ -219,14 +284,14 @@ class expect(ExpectMetaMagic):
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
     
-    def to_match(self, regex):
+    def matches(self, regex):
         string_type = str if sys.version > '3' else basestring
         expect(self._actual).is_instance(string_type)
         
         self._assert(re.search(regex, self._actual) is not None, "to be matched by regex r{0!r}", regex)
     
-    match = matching = matches = to_match
-    is_matching = to_match
+    match = matching = matches
+    is_matching = to_match = matches
     
     def starts_with(self, expected_start):
         self._assert(self._actual.startswith(expected_start), "to start with {0!r}", expected_start)
@@ -319,29 +384,33 @@ class expect(ExpectMetaMagic):
     def greater_than(self, smaller):
         self._assert(self._actual > smaller, "to be greater than {0!r}", smaller)
     
-    __gt__ = bigger = larger = larger_than = greater = greater_than
+    bigger = larger = larger_than = greater = greater_than
     is_greater_than = is_greater = greater_than
+    __gt__ = alias_with_hidden_backtrace('greater_than')
     # TODO: consider to include *_then because it's such a common error?
     
     def greater_or_equal(self, smaller_or_equal):
         self._assert(self._actual >= smaller_or_equal, "to be greater or equal than {0!r}", smaller_or_equal)
     
-    __ge__ = greater_or_equal_than = greater_or_equal
+    greater_or_equal_than = greater_or_equal
     is_greater_or_equal_than = is_greater_or_equal = greater_or_equal
+    __ge__ = alias_with_hidden_backtrace('greater_or_equal')
     # TODO: consider to include *_then because it's such a common error?
     
     def less_than(self, greater):
         self._assert(self._actual < greater, "to be less than {0!r}", greater)
     
-    __lt__ = smaller = smaller_than = lesser = lesser_than = less = less_than
+    smaller = smaller_than = lesser = lesser_than = less = less_than
     is_smaller_than = is_less_than = less_than
+    __lt__ = alias_with_hidden_backtrace('less_than')
     # TODO: consider to include *_then because it's such a common error?
     
     def less_or_equal(self, greater_or_equal):
         self._assert(self._actual <= greater_or_equal, "to be less or equal than {0!r}", greater_or_equal)
     
-    __le__ = smaller_or_equal = smaller_or_equal_than = lesser_or_equal = lesser_or_equal_than = less_or_equal_than = less_or_equal
+    smaller_or_equal = smaller_or_equal_than = lesser_or_equal = lesser_or_equal_than = less_or_equal_than = less_or_equal
     is_smaller_or_equal = is_smaller_or_equal_than = is_less_or_equal_than = is_less_or_equal = less_or_equal
+    __le__ = alias_with_hidden_backtrace('less_or_equal')
     # TODO: consider to include *_then because it's such a common error?
     
     # TODO: consider adding is_between_exclusive
@@ -362,3 +431,13 @@ class expect(ExpectMetaMagic):
     about_equals = about_equal = about = almost_equals = almost_equal = close = close_to
     is_about =  is_almost_equal = is_close = is_close_to = close_to
     
+    def is_permutation_of(self, a_sequence, *additional_elements):
+        def element_counts(a_sequence):
+            import collections
+            counts = collections.defaultdict(int)
+            for element in a_sequence:
+                counts[element] += 1
+            return counts
+        
+        self._assert(element_counts(self._actual) == element_counts(a_sequence), "to be permutation of {0!r}", a_sequence)
+        
