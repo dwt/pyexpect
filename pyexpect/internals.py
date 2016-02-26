@@ -116,11 +116,10 @@ class ExpectMetaMagic(object):
             if self._should_raise:
                 return return_value
         except AssertionError as assertion:
-            # REFACT: consider to do this when creating the assertion as that's the most logical place to look for it
-            message = self._message(assertion)
+            message = self._force_utf8(assertion)
             
             if self._should_raise:
-                raise AssertionError(message)
+                raise
             
             return (False, message)
         
@@ -129,7 +128,7 @@ class ExpectMetaMagic(object):
     def _assert(self, assertion, message_format, *message_positionals, **message_keywords):
         # FIXME assertions will be disabled in python -o 1 - so this my be no good if pyexpect is used as an expectation library in production code. See https://github.com/pyca/cryptography/commit/915e0a1194400203b0e49e05de5facbc4ac8eb66
         assert assertion is self._expected_assertion_result, \
-            message_format.format(*message_positionals, **message_keywords)
+            self._message(message_format, message_positionals, message_keywords)
     
     def _assert_if_positive(self, assertion, message_format, *message_positionals, **message_keywords):
         if self._is_negative():
@@ -143,11 +142,8 @@ class ExpectMetaMagic(object):
         
         self._assert(assertion, message_format, *message_positionals, **message_keywords)
     
-    def _message(self, assertion):
-        message = self._message_from_exception(assertion)
-        if isinstance(assertion, AssertionError) and message.startswith("Expect "):
-            raise assertion # show original exception
-        
+    def _message(self, message_format, message_positionals, message_keywords):
+        message = self._force_utf8(message_format).format(*message_positionals, **message_keywords)
         actual = repr(self._actual)
         # using two newlines to make it easier to find on a terminal
         optional_newline = '\n\n' if len(actual) > 40 else ' '
@@ -159,7 +155,7 @@ class ExpectMetaMagic(object):
         
         return assertion_message
     
-    def _message_from_exception(self, exception):
+    def _force_utf8(self, exception):
         if sys.version < '3':
             try: return unicode(exception).encode('utf8')
             except UnicodeDecodeError as ignored: pass
