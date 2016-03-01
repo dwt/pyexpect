@@ -21,6 +21,7 @@ setup(
     long_description=readme(),
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
+    license='BSD',
     url='https://bitbucket.org/dwt/pyexpect',
     packages=find_packages(),
     test_suite="tests",
