@@ -484,3 +484,12 @@ class MatcherTest(TestCase):
     def _test_has_subset(self):
         pass
     
+    def _test_time_tacking(self):
+        pass
+        """
+        Idea is to allow easier measurement of expired seconds / time. Something along the lines of
+        with expect.time_measurement as t:
+            # something that takes some time
+            expect(some_expected_time) == t.seconds()
+            # or something similar
+            """
