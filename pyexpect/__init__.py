@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf8
 
-# BSD Licensed <http://opensource.org/licenses/BSD-2-Clause>
+# ISC Licensed <https://opensource.org/licenses/ISC>
 # Author: Martin Häcker mhaecker ät mac dot com
 
 # Inspired by:
