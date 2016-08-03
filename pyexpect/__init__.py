@@ -227,7 +227,7 @@ class expect(ExpectMetaMagic):
         self._assert(something is self._actual, "to be {0!r}", something)
     
     same = identical = is_ = be
-    be_same = is_same = be_identical = is_identical = to_be = be
+    be_same = is_same = be_identical = is_identical = is_identical_to = to_be = be
     
     def trueish(self):
         self._assert(bool(self._actual) is True, "to be trueish")
@@ -277,6 +277,23 @@ class expect(ExpectMetaMagic):
     
     includes_dict = contains_dict = subdict = sub_dict
     to_have_subdict = have_subdict = have_sub_dict = has_subdict = has_sub_dict = sub_dict
+    
+    def sub_list(self, sequence_or_atom, *additional_atoms):
+        sequence = sequence_or_atom
+        if len(additional_atoms) > 0:
+            sequence = self._concatenate(sequence_or_atom, *additional_atoms)
+        def includes_sequence():
+            if len(sequence) > len(self._actual):
+                return False
+            normalized_sequence = tuple(sequence)
+            for start in range(len(self._actual) - len(sequence) + 1):
+                # import sys; sys.stdout = sys.__stdout__; from pdb import set_trace; set_trace()
+                if tuple(self._actual[start:start+len(sequence)]) == normalized_sequence:
+                    return True
+            return False
+        self._assert(includes_sequence(), "to contain sequence {0!r}", sequence)
+    to_have_sub_sequence = has_sub_sequence = sub_sequence = sub_list
+    to_have_sublist = to_have_sub_list = has_sublist = has_sub_list = sub_list
     
     def has_attribute(self, *attribute_names):
         for attribute_name in attribute_names:

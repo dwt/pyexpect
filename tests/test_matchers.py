@@ -130,6 +130,22 @@ class MatcherTest(TestCase):
         
         expect(lambda: expect((1,2)).includes()).to_raise(TypeError, native_python_error_message)
     
+    def test_has_sublist(self):
+        expect([1,2,3,4]).has_sublist(2,3)
+        expect([1,2,3,4]).has_sublist(2,3,4)
+        expect([1,2,3,4]).has_sublist(1,2)
+        expect([1,2,3,4]).has_sublist([1,2])
+        expect((1,2,3,4)).has_sublist([1,2])
+        expect([1,2,3,4]).has_sublist((1,2))
+        expect("fnord").has_sublist("fnor")
+        expect("fnord").has_sublist("nord")
+        expect("fnord").not_has_sublist("fnordynator")
+
+        expect(lambda: expect("foo").has_sublist('fnord')).to_raise(AssertionError,
+            r"""Expect 'foo' to contain sequence 'fnord'""")
+        expect(lambda: expect([1,2,3]).has_sublist(3,4)).to_raise(AssertionError,
+            r"""Expect \[1, 2, 3] to contain sequence \(3, 4\)""")
+    
     def test_has_subdict(self):
         expect(dict()).to_have.subdict()
         expect(dict(foo='bar')).to.have.subdict()
