@@ -80,12 +80,20 @@ Glad you ask! Here you go:
     
         def falseish(self):
             # See expect() source for availeable helpers
-            self._assert(bool(self._actual) is False, "to be falseish")
+            self._assert(self._actual == False, "to be falseish")
         expect.is_falsish = expect.is_falseish = expect.falsish = expect.falseish = falseish
+    
+    or
+        class expect(original_expect):
+            def falseish(self):
+                # See expect() source for availeable helpers
+                self._assert(self._actual == False, "to be falseish")
     
     Done!
     
     Also note how the matcher clearly communicates what is important: what it asserts, and what error message it generates. No fluff included™!
+    
+    Compared this to how you would add matchers to more established packages like [sure](https://pypi.python.org/pypi/sure) and [ensure](https://pypi.python.org/pypi/ensure) - I think pyexpect is simpler - you can either just assign a property on `expect` or create a local subclass with more methods.
 
 1.  Native `not` support: If you define a matcher, you don't have to define the inverse of it too or do anything special to get it. That means that for every matchers like `equals`, you automatically get the inverse of that, i.e. `not_equals`. This inverse can be invoked in a number of ways: 
     
