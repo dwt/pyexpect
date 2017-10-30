@@ -337,6 +337,26 @@ class MatcherTest(TestCase):
         
         expect(lambda: expect(object).hasattr('fnord')).to_raise(AssertionError, "Expect <(?:class|type) 'object'> to have attribute 'fnord'")
     
+    def test_has_attributes_with_dict_param(self):
+        class Foo(object):
+            bar = 'baz'
+            baz = 'quoox'
+            
+            def __repr__(self):
+                return '<Foo bar=%r, baz=%r>' % (self.bar, self.baz)
+            
+        expect(Foo()).has_attributes(bar='baz', baz='quoox')
+        # combines well with existing
+        expect(Foo()).has_attributes('bar', 'baz', bar='baz', baz='quoox')
+        # error cases
+        expect(lambda: expect(Foo()).not_.to_have_attributes(fnord_attr='fnord_value')).not_.to_raise()
+        expect(lambda: expect(Foo()).not_.to_have_attributes(baz='fnord_value')).not_.to_raise()
+        
+        expect(lambda: expect(Foo()).to_have_attributes(bar='quoox')) \
+            .to_raise(AssertionError, "Expect <Foo bar='baz', baz='quoox'> to have attributes {'bar': 'baz'} \n\tbut it has {'bar': 'quoox'}")
+        expect(lambda: expect(Foo()).not_.to_have_attributes(bar='fnord')) \
+            .not_.to_raise(AssertionError, "Expect <Foo bar='baz', baz='quoox'> not to have attribute 'bar'")
+    
     def test_is_subclass_of(self):
         expect(dict).is_subclass_of(object)
         expect(list).is_subclass_of(object, object)

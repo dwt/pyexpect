@@ -295,11 +295,25 @@ class expect(ExpectMetaMagic):
     to_have_sub_sequence = has_sub_sequence = sub_sequence = sub_list
     to_have_sublist = to_have_sub_list = has_sublist = has_sub_list = sub_list
     
-    def has_attribute(self, *attribute_names):
+    def has_attribute(self, *attribute_names, **attributes):
         for attribute_name in attribute_names:
-            self._assert(hasattr(self._actual, attribute_name) is True, "to have attribute {0!r}", attribute_name)
+            self._assert(hasattr(self._actual, attribute_name), "to have attribute {0!r}", attribute_name)
+        
+        if len(attributes) >= 1:
+            missing_attriute = object()
+            actual_attributes = dict(
+                (attribute_name, getattr(self._actual, attribute_name, missing_attriute))
+                for attribute_name, attribute_value in attributes.items()
+            )
+            # if actual_attributes != attributes:
+            #     import sys; sys.stdout = sys.__stdout__; from pdb import set_trace; set_trace()
+            self._assert(actual_attributes == attributes,
+                'to have attributes {0!r} \n\tbut it has {1!r}', 
+                actual_attributes, attributes)
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
+    have_attribues = has_attributes = have_attrs = has_attribute
+    to_have_attributes = has_attribute
     
     def matches(self, regex):
         string_type = str if sys.version > '3' else basestring
