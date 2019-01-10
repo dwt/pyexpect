@@ -305,8 +305,6 @@ class expect(ExpectMetaMagic):
                 (attribute_name, getattr(self._actual, attribute_name, missing_attribute))
                 for attribute_name, attribute_value in attributes.items()
             )
-            # if actual_attributes != attributes:
-            #     import sys; sys.stdout = sys.__stdout__; from pdb import set_trace; set_trace()
             self._assert(actual_attributes == attributes,
                 'to have attributes {0!r} \n\tbut it has {1!r}', 
                 actual_attributes, attributes)
