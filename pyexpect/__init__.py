@@ -300,9 +300,9 @@ class expect(ExpectMetaMagic):
             self._assert(hasattr(self._actual, attribute_name), "to have attribute {0!r}", attribute_name)
         
         if len(attributes) >= 1:
-            missing_attriute = object()
+            missing_attribute = object()
             actual_attributes = dict(
-                (attribute_name, getattr(self._actual, attribute_name, missing_attriute))
+                (attribute_name, getattr(self._actual, attribute_name, missing_attribute))
                 for attribute_name, attribute_value in attributes.items()
             )
             # if actual_attributes != attributes:
