@@ -408,7 +408,7 @@ class expect(ExpectMetaMagic):
         self._assert(actual == a_length, "to have length {0}, but found length {1}", a_length, actual)
     
     len = count = length
-    have_length = has_count = has_length = length
+    has_len = have_length = has_count = has_length = length
     
     def greater_than(self, smaller):
         self._assert(self._actual > smaller, "to be greater than {0!r}", smaller)
