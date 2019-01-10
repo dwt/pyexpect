@@ -306,7 +306,7 @@ class expect(ExpectMetaMagic):
                 for attribute_name, attribute_value in attributes.items()
             )
             self._assert(actual_attributes == attributes,
-                'to have attributes {0!r} \n\tbut it has {1!r}', 
+                'has attributes {0!r} \n\tbut should have {1!r}', 
                 actual_attributes, attributes)
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
