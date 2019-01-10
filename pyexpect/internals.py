@@ -80,6 +80,18 @@ class ExpectMetaMagic(object):
         if name.startswith('not_'):
             name = name[4:]
         
+        def _has_attr(name):
+            "Need custom hasattr to prevent recursion with __getattribute__"
+            try:
+                object.__getattribute__(self, name)
+                return True
+            except AttributeError as e:
+                return False
+        
+        # some matchers need _ suffix to prevent colision with python keywords
+        if not _has_attr(name) and _has_attr(name + '_'):
+            name += '_'
+        
         # need object.__getattribute__ to prevent recursion with self.__getattribute__
         try:
             return object.__getattribute__(self, name)

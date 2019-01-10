@@ -114,6 +114,9 @@ class MetaFunctionalityTest(TestCase):
         raising = lambda: expect(lambda: 1 / 0).not_to_raise(ZeroDivisionError)
         expect(raising).to_raise(AssertionError, "division.* by zero")
     
+    def test_not_in_path_finds_matchers_that_end_in_underscore_so_they_dont_collide_with_python_keywords(self):
+        expect(3).not_in([1,2])
+    
     def test_can_return_error_instead_of_raising(self):
         # Idea: have a good api to check expectations without raising
         expect(expect(False, should_raise=False).to_be(False)).equals((True, ""))
