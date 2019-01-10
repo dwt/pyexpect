@@ -4,8 +4,6 @@ from pyexpect import expect
 from unittest import TestCase
 import sys
 
-from pyexpect.internals import disabled_backtrace_cleaning
-
 class MetaFunctionalityTest(TestCase):
     
     def test_can_subclass_expect(self):
@@ -154,8 +152,7 @@ class MetaFunctionalityTest(TestCase):
         expect(processed_traceback[0]).to_contain('expect(1).equals(2)')
         
         expect(processed_traceback[1]).to_contain('pyexpect_internals_hidden_in_backtraces')
-        expect(processed_traceback[1]).to_contain('raise exception')
-        
+        expect(processed_traceback[1]).to_contain('raise exception # use `with expect.disabled_backtrace_cleaning():` to show full backtrace')
     
     def test_stacktrace_does_not_contain_an_extra_method_when_wrapping_operator_matchers(self):
         import traceback
@@ -172,7 +169,7 @@ class MetaFunctionalityTest(TestCase):
         expect(processed_traceback[0]).to_contain('expect(1) == 2')
         
         expect(processed_traceback[1]).to_contain('pyexpect_internals_hidden_in_backtraces')
-        expect(processed_traceback[1]).to_contain('raise exception')
+        expect(processed_traceback[1]).to_contain('raise exception # use `with expect.disabled_backtrace_cleaning():` to show full backtrace')
     
     def test_hides_double_underscore_alternative_names_from_tracebacks(self):
         import sys
@@ -191,7 +188,7 @@ class MetaFunctionalityTest(TestCase):
         # To ease debugging matchers
         import traceback
         exception_traceback = None
-        with disabled_backtrace_cleaning():
+        with expect.disabled_backtrace_cleaning():
             try:
                 # Not the standard as it has more wrappers
                 expect(1) == 2

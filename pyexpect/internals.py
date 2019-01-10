@@ -1,14 +1,6 @@
 import sys
 from contextlib import contextmanager
 
-@contextmanager
-def disabled_backtrace_cleaning():
-    remove_internals_from_assertion_backtraces.disabled = True
-    try:
-        yield
-    finally:
-        del remove_internals_from_assertion_backtraces.disabled
-
 def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
     # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
     # Hides the actual matcher and all the methods it calls to assert stuff.
@@ -27,7 +19,7 @@ def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
                 # Get rid of the link to the causing exception as it greatly cluttes the error message
                 exception.__cause__ = None
                 exception.with_traceback(None)
-            raise exception
+            raise exception # use `with expect.disabled_backtrace_cleaning():` to show full backtrace
     return pyexpect_internals_hidden_in_backtraces
 
 
@@ -169,4 +161,13 @@ class ExpectMetaMagic(object):
     
     def _concatenate(self, *args):
         return args
+    
+    @staticmethod
+    @contextmanager
+    def disabled_backtrace_cleaning():
+        remove_internals_from_assertion_backtraces.disabled = True
+        try:
+            yield
+        finally:
+            del remove_internals_from_assertion_backtraces.disabled
     

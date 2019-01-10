@@ -127,7 +127,7 @@ class expect(ExpectMetaMagic):
     # It can also be helpfull to disable the backtrace munging that pyexpect does. 
     # To do so, wrap the code in question with:
     #    import pyexpect.internals
-    #    with pyexpect.internals.disabled_backtrace_cleaning():
+    #    with expect.internals.disabled_backtrace_cleaning():
     #        expect(foo).my_matcher()
     # and you will get the full traceback.
 
