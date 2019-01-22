@@ -5,25 +5,14 @@ from setuptools import setup, find_packages
 import os
 
 here = os.path.dirname(os.path.abspath(__file__))
+import codecs
 
-def readme():
-    "Falls back to just file().read() on any error, because the conversion to rst is only really relevant when uploading the package to pypi"
-    from subprocess import CalledProcessError
-    try:
-        from subprocess import check_output
-        return check_output(['pandoc', '--from', 'markdown', '--to', 'rst', 'README.md']).decode('utf-8')
-    except (ImportError, OSError, CalledProcessError) as error:
-        print('pandoc is required to get the description as rst (as required to get nice rendering in pypi) - using the original markdown instead.',
-              'See http://johnmacfarlane.net/pandoc/')
-    return open(path.join(here, 'README.md')).read().decode('utf-8')
-
-
-
-setup(
+setup_args = dict(
     name='pyexpect',
-    version='1.0.17',
+    version='1.0.18',
     description='Python expectaton library',
-    long_description=readme(),
+    long_description=codecs.open(os.path.join(here, 'README.md'), encoding='utf-8').read(),
+    long_description_content_type='text/markdown',
     author='Martin Häcker',
     author_email='spamfaenger@gmx.de',
     license='ISC',
@@ -43,3 +32,6 @@ setup(
         'Topic :: Software Development :: Quality Assurance',
     ],
 )
+
+if __name__ == '__main__':
+    setup(**setup_args)
