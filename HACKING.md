@@ -20,4 +20,6 @@ Please note that this project practices Semantic Versioning and [Dependable API 
     - could lead to even better wording of the error messages
     - needs to still work reasonable for the operator shortcuts
     - `` expect(foo).to_be.equal_to(bar) `` -> `` Expect <foo> to be equal to <bar> ``
-    
+- is there a way to raise the error exception in the context of the parent method, to clean the backtrace even further?
+- check that exception chaining is used, so it is easy to get to the original exception with the full stack trace
+    - look at sys.settrace and debugger functionality how to do this
