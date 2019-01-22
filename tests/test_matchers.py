@@ -211,15 +211,15 @@ class MatcherTest(TestCase):
             .to_raise(AssertionError, r">\s*to raise Exception but it raised:\s*None")
         # raising unexpected
         expect(lambda: expect(raiser).not_to.raise_()).to_raise(AssertionError,
-            r">\s*not to raise Exception but it raised:\s*TestException\('test_exception',\)$")
+            r">\s*not to raise Exception but it raised:\s*TestException\('test_exception',?\)$")
         expect(lambda: expect(raiser).not_to.raise_(TestException)).to_raise(AssertionError,
-            r">\s*not to raise TestException but it raised:\n\tTestException\('test_exception',\)$")
+            r">\s*not to raise TestException but it raised:\n\tTestException\('test_exception',?\)$")
         expect(lambda: expect(raiser).not_to.raise_(TestException, r"^test_exception$")).to_raise(AssertionError,
-            r">\s*not to raise TestException with message matching:\n\tr'\^test_exception\$'\nbut it raised:\n\tTestException\('test_exception',\)$")
+            r">\s*not to raise TestException with message matching:\n\tr'\^test_exception\$'\nbut it raised:\n\tTestException\('test_exception',?\)$")
             
         # raising right exception, wrong message
         expect(lambda: expect(raiser).to_raise(TestException, r'fnord')).to_raise(AssertionError, 
-            r">\s*to raise TestException with message matching:\n\tr'fnord'\nbut it raised:\n\tTestException\('test_exception',\)$")
+            r">\s*to raise TestException with message matching:\n\tr'fnord'\nbut it raised:\n\tTestException\('test_exception',?\)$")
         
         # Can catch exceptions that do not inherit from Exception to ensure everything is testable
         expect(lambda: sys.exit('gotcha')).to_raise(SystemExit)
