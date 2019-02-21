@@ -1,6 +1,8 @@
 import sys
 from contextlib import contextmanager
 
+__unittest = True # Hide from unittest.TestCase
+
 def remove_internals_from_assertion_backtraces(method_to_be_wrapped):
     # Make the stacktrace easier to read by tricking python to shorten the stack trace to this method.
     # Hides the actual matcher and all the methods it calls to assert stuff.
