@@ -287,7 +287,6 @@ class expect(ExpectMetaMagic):
                 return False
             normalized_sequence = tuple(sequence)
             for start in range(len(self._actual) - len(sequence) + 1):
-                # import sys; sys.stdout = sys.__stdout__; from pdb import set_trace; set_trace()
                 if tuple(self._actual[start:start+len(sequence)]) == normalized_sequence:
                     return True
             return False
@@ -306,8 +305,8 @@ class expect(ExpectMetaMagic):
                 for attribute_name, attribute_value in attributes.items()
             )
             self._assert(actual_attributes == attributes,
-                'has attributes {0!r} \n\tbut should have {1!r}', 
-                actual_attributes, attributes)
+                'to have attributes {0!r}, \n\tbut has {1!r}', 
+                attributes, actual_attributes)
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
     have_attribues = has_attributes = have_attrs = has_attribute

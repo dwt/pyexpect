@@ -23,3 +23,5 @@ Please note that this project practices Semantic Versioning and [Dependable API 
 - is there a way to raise the error exception in the context of the parent method, to clean the backtrace even further?
 - check that exception chaining is used, so it is easy to get to the original exception with the full stack trace
     - look at sys.settrace and debugger functionality how to do this
+- catch up to unittest.Testcase and implement stuff like assertWarns, assertLogs, assertMultiLineEqual
+- Generate diffs everywhere to make output more readable

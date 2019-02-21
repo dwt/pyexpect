@@ -353,7 +353,7 @@ class MatcherTest(TestCase):
         expect(lambda: expect(Foo()).not_.to_have_attributes(baz='fnord_value')).not_.to_raise()
         
         expect(lambda: expect(Foo()).to_have_attributes(bar='quoox')) \
-            .to_raise(AssertionError, "Expect <Foo bar='baz', baz='quoox'> has attributes {'bar': 'baz'} \n\tbut should have {'bar': 'quoox'}")
+            .to_raise(AssertionError, "Expect <Foo bar='baz', baz='quoox'> to have attributes {'bar': 'quoox'}, \n\tbut has {'bar': 'baz'}")
         expect(lambda: expect(Foo()).not_.to_have_attributes(bar='fnord')) \
             .not_.to_raise(AssertionError, "Expect <Foo bar='baz', baz='quoox'> not to have attribute 'bar'")
     
