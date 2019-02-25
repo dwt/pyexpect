@@ -145,7 +145,7 @@ class expect(ExpectMetaMagic):
     def none(self):
         self._assert(self._actual is None, "to be None")
     
-    is_none = none
+    is_none = to_be_none = none
 
     def exist(self):
         self._assert(self._actual is not None, "to exist (not be None)")
@@ -382,7 +382,7 @@ class expect(ExpectMetaMagic):
     def empty(self):
         self._assert(len(self._actual) == 0, "to be empty")
     
-    is_empty = empty
+    is_empty = to_be_empty = empty
     
     def instance_of(self, a_class, *additional_classes):
         for cls in self._concatenate(a_class, *additional_classes):
