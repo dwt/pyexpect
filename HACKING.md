@@ -10,10 +10,9 @@ With unit tests please.
 Please note that this project practices Semantic Versioning and [Dependable API Evolution](https://github.com/dwt/Dependable_API_Evolution)
 
 # Release checklist
-- Tests run at least in python 2.7 and 3.4
-- Ensure pandoc is installed (to get nicer readme output for pypi)
+- Tests run at least in python 2.7 and 3.4, 3.5, 3.6, 3.7 (by running tox)
 - Increment version and tag
-- upload new build with $ ./setup.py sdist upload
+- upload new build with $ ./setup.py sdist bdist_wheel && twine upload
 
 # Ideas
 - Consider to use the call pattern to write the actual error message.
@@ -25,3 +24,4 @@ Please note that this project practices Semantic Versioning and [Dependable API 
     - look at sys.settrace and debugger functionality how to do this
 - catch up to unittest.Testcase and implement stuff like assertWarns, assertLogs, assertMultiLineEqual
 - Generate diffs everywhere to make output more readable
+- rework documentation from my talk at berlin.python.pizza
