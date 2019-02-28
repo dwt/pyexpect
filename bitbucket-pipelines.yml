@@ -1,0 +1,7 @@
+image: python:3.7.2
+pipelines:
+  default:
+    - step:
+        script:
+          - python --version
+
