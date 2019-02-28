@@ -2,3 +2,4 @@ dist
 .tox
 .pytest_cache
 .ipynb_checkpoints
+build
