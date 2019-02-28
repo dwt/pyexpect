@@ -12,7 +12,7 @@ Please note that this project practices Semantic Versioning and [Dependable API 
 # Release checklist
 - Tests run at least in python 2.7 and 3.4, 3.5, 3.6, 3.7 (by running tox)
 - Increment version and tag
-- upload new build with $ ./setup.py sdist bdist_wheel && twine upload
+- upload new build with $ rm -r dist/* && ./setup.py sdist bdist_wheel && twine upload dist/*
 
 # Ideas
 - Consider to use the call pattern to write the actual error message.
@@ -25,3 +25,5 @@ Please note that this project practices Semantic Versioning and [Dependable API 
 - catch up to unittest.Testcase and implement stuff like assertWarns, assertLogs, assertMultiLineEqual
 - Generate diffs everywhere to make output more readable
 - rework documentation from my talk at berlin.python.pizza
+- add sphinx docs that lists all matchers, and especially groups all the alternative names...
+- add travis
