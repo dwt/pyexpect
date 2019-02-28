@@ -18,6 +18,10 @@ pipelines:
           script:
             - python3.4 setup.py test
       - step:
+          image: python:2
+          script:
+            - python setup.py test
+      - step:
           image: pypy:2
           script:
             - pypy setup.py test
