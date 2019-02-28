@@ -2,30 +2,37 @@ pipelines:
   default:
     - parallel:
       - step:
+          name: python:3.7
           image: python:3.7
           script:
             - python3.7 setup.py test
       - step:
+          name: python:3.6
           image: python:3.6
           script:
             - python3.6 setup.py test
       - step:
+          name: python:3.5
           image: python:3.5
           script:
             - python3.5 setup.py test
       - step:
+          name: python:3.4
           image: python:3.4
           script:
             - python3.4 setup.py test
       - step:
+          name: python:2
           image: python:2
           script:
             - python setup.py test
       - step:
+          name: pypy:2
           image: pypy:2
           script:
             - pypy setup.py test
       - step:
+          name: pypy:3
           image: pypy:3
           script:
             - pypy3 setup.py test
