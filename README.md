@@ -2,37 +2,58 @@
 
 The whole point of the expect pattern is to allow concise assertions that generate predictable and good error messages.
 
-Best viewed in an example:
+Best viewed in an example (here from pytest)
 
-    >>> expect(3).to.equal(4)
-    Traceback (most recent call last):
-      File "<input>", line 1, in <module>
-      File "expect.py", line 146, in __call__
-    AssertionError: Expect 3 to equal 4
+    ___ test_equals ______________________________________________________
+
+        def test_equals():
+    >       expect(foo).to_equal(bar) # many variant spellings, see source
+    E       AssertionError: Expect 3 to equal 4
+
+    ___ test_equals_shorthand ____________________________________________
+
+        def test_equals_shorthand():
+    >       expect(foo) == bar # if you like the pyexpect way better
+    E       AssertionError: Expect 3 to equal 4
+
+    === 2 failed in 0.06 seconds =========================================
 
 Line noise is reduced as much as possible, so the error message is displayed as near to the problematic code as possible. No stack traces to dig through, clear and consistent error messages that tell you what went wrong. Thats how assertions should work.
 
 ## Why should I use expect() over self.assert*?
 
-This is best explained in contrast to the classic assertion pattern like the python unittest module uses. In addition to all that however, these assertions can be used independently of any unittest package. But lets start with an example:
+Lets start with an example:
 
     self.assertEquals('foo', 'bar')
 
-In this assertion it is not possible to see which of the arguments is the expected and which is the actual value. While this ordering is mostly internally consistent between the different assertions within the unittest package (sadly only mostly), it is not consistent between all the different unit testing packages out there for python and especially not between different languages this pattern has been implemented on.
+In this assertion it is not possible to see which of the arguments is the expected and which is the actual value. While this ordering is mostly internally consistent between the different assertions within the unittest package, it is certainly not consistent in how people use this package. This becomes even more unnerving if you switch unit test packages, teams and languages.
 
-To add insult to injury some frameworks will then output the error message like this:
-(Yes unittest I'm looking at you!)
+The problem here is that the API has not way of knowing which of the two arguments is the expected value, and thus that information cannot be used in the error message.
 
-    'bar' does not equal 'foo'
+Consider this `unittest.TestCase` example:
 
-It's easy to spend minutes till you remember or figure out that your framework fooled you and inverted the order of arguments just to make it harder for you to understand the code you are reading.
+    ======================================================================
+    FAIL: test_equals (__main__.ExpectedActualConfusionTest)
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "<ipython-input-4-a19c8d7db4a9>", line 6, in test_equals
+        self.assertEqual(sorted(unsorted), [1,2,3,5])
+    AssertionError: Lists differ: [1, 2, 3, 5, 8] != [1, 2, 3, 5]
+
+    First list contains 1 additional elements.
+    First extra element 4:
+    8
+
+    - [1, 2, 3, 5, 8]
+    ?            ---
+    + [1, 2, 3, 5]
+
+Thats quite a nice error message - but you have to read and understand the unit test quite deeply, to unnderstand which of those values is the expected and which the actual value. (To add insult to injury, there are testing frameworks out there who print the second argument first, giving you even more rope to hang yourself trying to read the output.)
 
 If you are as annoyed by this as I am, allow me to introduce you to the expect pattern. An assertion like this:
 
     expect('foo').to.equal('bar')
-    # or this
     expect('foo').equals('bar')
-    # or even this
     expect('foo') == 'bar'
 
 Makes it absolutely plain what is the expected and what is the actual value. 
@@ -41,11 +62,40 @@ to the source code:
 
     Expect 'foo' to equal 'bar'.
 
-Thus the mapping from the error message is immediate and complete saving you minutes each time, enhancing your focus, productivity and - most important - your enjoyment when working with unit tests.
+Thus the mapping from the error message is immediately and completely clear, saving you minutes each time, enhancing your focus, productivity and - most important - your enjoyment when working with unit tests.
 
 As a bonus all these exceptions are not coupled to any TestCase class so you can easily reuse them anywhere in your code to formalize expectations that your code has about some internal state. Sometimes called 'Design by Contract' or 'Fail Fast' programming. Oh and these expectations are generally shorter, so you even have less to type while getting clearer and more to the point assertions into your tests. Almost like having a cake and eating it too!
 
-## Interesting! So what can it do?
+## But I alread gave up on `unittest.TestCase` and moved on to PyTest
+
+It is quite amazing what kind of error messages pytest can conjure up from just plain python assertions. But there is a problem. Because the API (`assert somethingThatResolvesToTrueOrFalse()`) has no idea what the test is actually about. This means the error message neccessary easily lacks context.
+
+Consider this test that tries to ensure that a framework outputs a specific type:
+
+    import numpy as np
+    obj = np.int8(3)
+    def test_bad_error_message():
+        assert isinstance(obj, int)
+    
+    # Testing output
+    ____ test_bad_error_message ________________
+    
+        def test_bad_error_message():
+    >       assert isinstance(obj, int)
+    E       assert False
+    E        +  where False = isinstance(3, int)
+
+Looking at the output - can you figure out what happened?
+
+The `repr()` of `np.int8(3)` is `3`, which is identicall to that of `int(3)`, which makes this error message ... bad.
+
+The problem is that pytest cannot know what this assertion is actually about. Thus it cannot know that the type of the argument (`np.int8`) is the information that would be usefull here.
+
+For this reason pyexpect contains a rich set of matchers that generate clear and readable error messages every time.
+
+Also, of course, if you try to use normal assertions outside of pytes tests, you will discover that the python default ouptut from these exceptions sucks quite hard and is completely useless without custom error messages, which is quite verbose to type.
+
+# Interesting! So what can it do?
 
 Glad you ask! Here you go:
 
@@ -53,8 +103,8 @@ Glad you ask! Here you go:
     
     Some examples:
     
-        expect(True).is_.true()
         expect(True).is_true()
+        expect(True).is_.true()
         expect(True).equals(True)
         expect(True).is_.equal(True)
         expect(True) == True
