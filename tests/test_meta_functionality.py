@@ -203,3 +203,26 @@ class MetaFunctionalityTest(TestCase):
         expect(function_names).contains('__call__')
         expect(function_names).contains('equal')
         expect(function_names).contains('_assert')
+    
+    def test_comparing_types_which_return_trueish_works(self):
+        # numpy does this. If you compary numpy.float64 to int, you get a numpy.bool as a result
+        class MyBool(object):
+            
+            def __init__(self, value):
+                self._value = value
+            
+            def __eq__(self, other):
+                return self._value == other
+        
+        class MyFloat(object):
+            
+            def __init__(self, value):
+                self._value = value
+            
+            def __eq__(self, other):
+                return MyBool(self._value == other)
+        
+        expect(MyFloat(100)).equals(100)
+        expect(MyFloat(100)).not_equals(50)
+        expect(expect(MyFloat(100)).not_equals._is_negative()).is_true()
+        

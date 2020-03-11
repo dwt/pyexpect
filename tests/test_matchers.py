@@ -101,6 +101,7 @@ class MatcherTest(TestCase):
         expect(None).does_not.exist()
         
         expect(lambda: expect(None).exists()).to_raise(AssertionError, r"Expect None to exist")
+    
     def test_included_in(self):
         expect(1).is_included_in(1,2,3)
         expect(1).is_included_in([1,2,3])
@@ -320,7 +321,6 @@ class MatcherTest(TestCase):
         expect(3).is_between(1,10)
         expect(lambda: expect(10).is_between(1,3)).to_raise(AssertionError, "Expect 10 to be between 1 and 3")
     
-
     def test_close_to(self):
         expect(3.4).is_close_to(3, 0.5)
         expect(-3.4).is_close_to(-3, 0.5)
@@ -377,7 +377,6 @@ class MatcherTest(TestCase):
             AssertionError, "Expect 'fnord' to end with 'bar'"
         )
     
-    
     def test_is_permutation_of(self):
         expect("fnord").is_permutation_of("fnord")
         expect("Martin").is_permutation_of("nitraM")
@@ -389,7 +388,6 @@ class MatcherTest(TestCase):
         
         expect(lambda: expect(23).is_permutation_of("foo")) \
             .to_raise(TypeError, "'int' object is not iterable")
-        
     
     def test_changes(self):
         # actor and getter need to be callable
@@ -511,11 +509,9 @@ class MatcherTest(TestCase):
         # expect(increaser, accessor).increases_by(a_number)
         pass
     
-    
     def _test_in(self):
         expect('foo') in dict(foo='foo')
         expect(lambda: expect('foo') in dict(bar='bar')).to_raise(AssertionError)
-    
     
     def _test_has_subset(self):
         pass
