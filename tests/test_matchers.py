@@ -131,6 +131,12 @@ class MatcherTest(TestCase):
         
         expect(lambda: expect((1,2)).includes()).to_raise(TypeError, native_python_error_message)
     
+    def test_includes_handles_generator(self):
+        def generator():
+            yield 'foo'
+            yield 'bar'
+        expect(generator()).contains('bar', 'foo')
+    
     def test_has_sublist(self):
         expect([1,2,3,4]).has_sublist(2,3)
         expect([1,2,3,4]).has_sublist(2,3,4)

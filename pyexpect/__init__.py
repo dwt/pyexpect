@@ -18,7 +18,7 @@
 
 __all__ = ['expect']
 
-import re, sys, numbers
+import re, sys, numbers, types
 from .internals import ExpectMetaMagic, alias_with_hidden_backtrace
 
 marker = object()
@@ -244,8 +244,14 @@ class expect(ExpectMetaMagic):
     is_falsy = falsy
     
     def includes(self, needle, *additional_needles):
+        actual = self._actual
+        # if self._actual is a generator, the `needle in self._actual` check 
+        # will advance the generator until a match is found
+        # thus maybe preventing the next check from succeeding
+        if type(self._actual) is types.GeneratorType:
+            actual = list(self._actual)
         for needle in self._concatenate(needle, *additional_needles):
-            self._assert(needle in self._actual, "to include {0!r}", needle)
+            self._assert(needle in actual, "to include {0!r}", needle)
     
     contain = contains = include = includes
     to_contain = does_include = to_include = has_key = includes
@@ -309,7 +315,7 @@ class expect(ExpectMetaMagic):
                 attributes, actual_attributes)
     hasattr = has_attr = has_attribute
     have_attribute = have_attr = has_attribute
-    have_attribues = has_attributes = have_attrs = has_attribute
+    have_attributes = has_attributes = have_attrs = has_attribute
     to_have_attributes = has_attribute
     
     def matches(self, regex):
