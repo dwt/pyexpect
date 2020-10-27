@@ -9,7 +9,7 @@ import codecs
 
 setup_args = dict(
     name='pyexpect',
-    version='1.0.20',
+    version='1.0.21',
     description='Python expectaton library',
     long_description=codecs.open(os.path.join(here, 'README.md'), encoding='utf-8').read(),
     long_description_content_type='text/markdown',
