@@ -244,14 +244,15 @@ class expect(ExpectMetaMagic):
     is_falsy = falsy
     
     def includes(self, needle, *additional_needles):
-        actual = self._actual
         # if self._actual is a generator, the `needle in self._actual` check 
         # will advance the generator until a match is found
         # thus maybe preventing the next check from succeeding
+        # FIXME This is actually a problem with more / all matchers that generators need special handling
+        # and possibly a conversion to list to make them usefully display
         if type(self._actual) is types.GeneratorType:
-            actual = list(self._actual)
+            self._actual = list(self._actual)
         for needle in self._concatenate(needle, *additional_needles):
-            self._assert(needle in actual, "to include {0!r}", needle)
+            self._assert(needle in self._actual, "to include {0!r}", needle)
     
     contain = contains = include = includes
     to_contain = does_include = to_include = has_key = includes
