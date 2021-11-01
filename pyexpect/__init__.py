@@ -255,7 +255,7 @@ class expect(ExpectMetaMagic):
             self._assert(needle in self._actual, "to include {0!r}", needle)
     
     contain = contains = include = includes
-    to_contain = does_include = to_include = has_key = includes
+    to_contain = does_include = to_include = has_keys = has_key = includes
     
     def within(self, sequence_or_atom, *additional_atoms):
         sequence = sequence_or_atom
