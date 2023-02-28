@@ -181,6 +181,7 @@ class MatcherTest(TestCase):
         expect("fnord").matches(r"^fnord$")
         expect('bar').matches(r'\Abar\Z')
         expect('bär').matches(r'\Abär\Z')
+        expect(b'foo').matches(br'\Afoo\Z')
         
         expect(lambda: expect(32).matches("32"))\
             .raises(AssertionError, r"Expect 32 to be instance of '.*str.*'")

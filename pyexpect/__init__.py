@@ -320,7 +320,7 @@ class expect(ExpectMetaMagic):
     to_have_attributes = has_attribute
     
     def matches(self, regex):
-        string_type = str if sys.version > '3' else basestring
+        string_type = type(regex)
         expect(self._actual).is_instance(string_type)
         
         self._assert(re.search(regex, self._actual) is not None, "to be matched by regex r{0!r}", regex)
