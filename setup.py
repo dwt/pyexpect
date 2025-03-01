@@ -20,6 +20,7 @@ setup_args = dict(
     packages=find_packages(),
     include_package_data=True,
     test_suite="tests",
+    extras_require={"tests": ["pytest"]},
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
